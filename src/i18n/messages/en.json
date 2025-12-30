@@ -1,0 +1,242 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "noResults": "No results",
+    "viewAll": "View all",
+    "seeMore": "See more",
+    "language": "Language"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "courses": "Courses",
+    "myCourses": "My Courses",
+    "quizzes": "Quizzes",
+    "groups": "Groups",
+    "calendar": "Calendar",
+    "badges": "Badges",
+    "reports": "Reports",
+    "settings": "Settings",
+    "admin": "Administration",
+    "users": "Users",
+    "logout": "Logout"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signInWith": "Sign in with {provider}",
+    "signInTitle": "Sign in to the platform",
+    "signInDescription": "Use your Microsoft account to access the training platform",
+    "signInButton": "Sign in with Microsoft",
+    "signingIn": "Signing in...",
+    "error": "Sign in error",
+    "accessDenied": "Access denied"
+  },
+  "dashboard": {
+    "welcome": "Welcome, {name}",
+    "overview": "Overview",
+    "recentActivity": "Recent Activity",
+    "upcomingDeadlines": "Upcoming Deadlines",
+    "progress": "Progress",
+    "completedCourses": "Completed Courses",
+    "inProgressCourses": "In Progress",
+    "totalHours": "Total Hours",
+    "averageScore": "Average Score"
+  },
+  "courses": {
+    "title": "Courses",
+    "myCourses": "My Courses",
+    "allCourses": "All Courses",
+    "createCourse": "Create Course",
+    "editCourse": "Edit Course",
+    "deleteCourse": "Delete Course",
+    "courseName": "Course Name",
+    "description": "Description",
+    "category": "Category",
+    "duration": "Duration",
+    "level": "Level",
+    "modules": "Modules",
+    "lessons": "Lessons",
+    "enrolled": "Enrolled",
+    "notEnrolled": "Not Enrolled",
+    "enroll": "Enroll",
+    "continue": "Continue",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "published": "Published",
+    "draft": "Draft",
+    "addModule": "Add Module",
+    "addLesson": "Add Lesson",
+    "video": "Video",
+    "document": "Document",
+    "text": "Text"
+  },
+  "quizzes": {
+    "title": "Quizzes",
+    "createQuiz": "Create Quiz",
+    "editQuiz": "Edit Quiz",
+    "deleteQuiz": "Delete Quiz",
+    "quizName": "Quiz Name",
+    "questions": "Questions",
+    "addQuestion": "Add Question",
+    "questionText": "Question Text",
+    "answers": "Answers",
+    "correctAnswer": "Correct Answer",
+    "points": "Points",
+    "timeLimit": "Time Limit",
+    "attempts": "Attempts",
+    "passingScore": "Passing Score",
+    "startQuiz": "Start Quiz",
+    "submitQuiz": "Submit",
+    "score": "Score",
+    "passed": "Passed",
+    "failed": "Failed",
+    "review": "Review",
+    "retake": "Retake"
+  },
+  "groups": {
+    "title": "Groups",
+    "createGroup": "Create Group",
+    "editGroup": "Edit Group",
+    "deleteGroup": "Delete Group",
+    "groupName": "Group Name",
+    "members": "Members",
+    "addMembers": "Add Members",
+    "removeMembers": "Remove Members",
+    "assignedCourses": "Assigned Courses",
+    "assignCourse": "Assign Course"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "addEvent": "Add Event",
+    "deadline": "Deadline",
+    "session": "Session",
+    "reminder": "Reminder"
+  },
+  "badges": {
+    "title": "Badges",
+    "earned": "Earned",
+    "available": "Available",
+    "locked": "Locked",
+    "earnedOn": "Earned on {date}",
+    "requirements": "Requirements"
+  },
+  "reports": {
+    "title": "Reports",
+    "generate": "Generate",
+    "export": "Export",
+    "dateRange": "Date Range",
+    "userReport": "User Report",
+    "courseReport": "Course Report",
+    "groupReport": "Group Report",
+    "completionRate": "Completion Rate",
+    "averageScore": "Average Score",
+    "totalTime": "Total Time"
+  },
+  "admin": {
+    "title": "Administration",
+    "users": "User Management",
+    "usersList": "Users List",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "deleteUser": "Delete User",
+    "userName": "Name",
+    "userEmail": "Email",
+    "userRole": "Role",
+    "roles": {
+      "admin": "Administrator",
+      "trainer": "Trainer",
+      "manager": "Manager",
+      "learner": "Learner"
+    },
+    "status": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "lastLogin": "Last Login",
+    "createdAt": "Created Date",
+    "systemSettings": "System Settings",
+    "auditLogs": "Audit Logs",
+    "statistics": "Statistics",
+    "totalUsers": "Total Users",
+    "totalCourses": "Total Courses",
+    "activeUsers": "Active Users",
+    "platformUsage": "Platform Usage"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "notifications": "Notifications",
+    "security": "Security",
+    "preferences": "Preferences",
+    "language": "Language",
+    "theme": "Theme",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "systemTheme": "System Theme",
+    "emailNotifications": "Email Notifications",
+    "pushNotifications": "Push Notifications"
+  },
+  "landing": {
+    "hero": {
+      "title": "Next Generation Training Platform",
+      "subtitle": "Train your teams with personalized learning paths, interactive quizzes and real-time tracking",
+      "cta": "Get Started",
+      "ctaSecondary": "Learn More"
+    },
+    "features": {
+      "title": "Features",
+      "courses": {
+        "title": "Custom Courses",
+        "description": "Create tailored training paths with modules, videos and documents"
+      },
+      "quizzes": {
+        "title": "Interactive Quizzes",
+        "description": "Assess knowledge with customizable quizzes and instant feedback"
+      },
+      "groups": {
+        "title": "Group Management",
+        "description": "Organize your learners into groups and assign targeted training"
+      },
+      "calendar": {
+        "title": "Advanced Scheduling",
+        "description": "Plan your training over time with an integrated calendar"
+      },
+      "analytics": {
+        "title": "Reports & Analytics",
+        "description": "Track your team's progress with detailed dashboards"
+      },
+      "badges": {
+        "title": "Gamification",
+        "description": "Motivate your learners with badges and rewards"
+      }
+    },
+    "footer": {
+      "rights": "All rights reserved"
+    }
+  }
+}

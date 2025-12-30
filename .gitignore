@@ -15,6 +15,7 @@ build
 
 # Production
 dist
+deploy.zip
 
 # Misc
 .DS_Store

@@ -1,0 +1,242 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "actions": "Actions",
+    "confirm": "Confirmer",
+    "back": "Retour",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer",
+    "yes": "Oui",
+    "no": "Non",
+    "success": "Succès",
+    "error": "Erreur",
+    "warning": "Attention",
+    "info": "Information",
+    "noResults": "Aucun résultat",
+    "viewAll": "Voir tout",
+    "seeMore": "Voir plus",
+    "language": "Langue"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "courses": "Formations",
+    "myCourses": "Mes formations",
+    "quizzes": "Quiz",
+    "groups": "Groupes",
+    "calendar": "Calendrier",
+    "badges": "Badges",
+    "reports": "Rapports",
+    "settings": "Paramètres",
+    "admin": "Administration",
+    "users": "Utilisateurs",
+    "logout": "Déconnexion"
+  },
+  "auth": {
+    "signIn": "Connexion",
+    "signOut": "Déconnexion",
+    "signInWith": "Se connecter avec {provider}",
+    "signInTitle": "Connexion à la plateforme",
+    "signInDescription": "Utilisez votre compte Microsoft pour accéder à la plateforme de formation",
+    "signInButton": "Se connecter avec Microsoft",
+    "signingIn": "Connexion en cours...",
+    "error": "Erreur de connexion",
+    "accessDenied": "Accès refusé"
+  },
+  "dashboard": {
+    "welcome": "Bienvenue, {name}",
+    "overview": "Vue d'ensemble",
+    "recentActivity": "Activité récente",
+    "upcomingDeadlines": "Échéances à venir",
+    "progress": "Progression",
+    "completedCourses": "Formations terminées",
+    "inProgressCourses": "En cours",
+    "totalHours": "Heures totales",
+    "averageScore": "Score moyen"
+  },
+  "courses": {
+    "title": "Formations",
+    "myCourses": "Mes formations",
+    "allCourses": "Toutes les formations",
+    "createCourse": "Créer une formation",
+    "editCourse": "Modifier la formation",
+    "deleteCourse": "Supprimer la formation",
+    "courseName": "Nom de la formation",
+    "description": "Description",
+    "category": "Catégorie",
+    "duration": "Durée",
+    "level": "Niveau",
+    "modules": "Modules",
+    "lessons": "Leçons",
+    "enrolled": "Inscrit",
+    "notEnrolled": "Non inscrit",
+    "enroll": "S'inscrire",
+    "continue": "Continuer",
+    "completed": "Terminée",
+    "inProgress": "En cours",
+    "notStarted": "Non commencée",
+    "publish": "Publier",
+    "unpublish": "Dépublier",
+    "published": "Publiée",
+    "draft": "Brouillon",
+    "addModule": "Ajouter un module",
+    "addLesson": "Ajouter une leçon",
+    "video": "Vidéo",
+    "document": "Document",
+    "text": "Texte"
+  },
+  "quizzes": {
+    "title": "Quiz",
+    "createQuiz": "Créer un quiz",
+    "editQuiz": "Modifier le quiz",
+    "deleteQuiz": "Supprimer le quiz",
+    "quizName": "Nom du quiz",
+    "questions": "Questions",
+    "addQuestion": "Ajouter une question",
+    "questionText": "Texte de la question",
+    "answers": "Réponses",
+    "correctAnswer": "Réponse correcte",
+    "points": "Points",
+    "timeLimit": "Temps limite",
+    "attempts": "Tentatives",
+    "passingScore": "Score de passage",
+    "startQuiz": "Commencer le quiz",
+    "submitQuiz": "Soumettre",
+    "score": "Score",
+    "passed": "Réussi",
+    "failed": "Échoué",
+    "review": "Revoir",
+    "retake": "Repasser"
+  },
+  "groups": {
+    "title": "Groupes",
+    "createGroup": "Créer un groupe",
+    "editGroup": "Modifier le groupe",
+    "deleteGroup": "Supprimer le groupe",
+    "groupName": "Nom du groupe",
+    "members": "Membres",
+    "addMembers": "Ajouter des membres",
+    "removeMembers": "Retirer des membres",
+    "assignedCourses": "Formations assignées",
+    "assignCourse": "Assigner une formation"
+  },
+  "calendar": {
+    "title": "Calendrier",
+    "today": "Aujourd'hui",
+    "week": "Semaine",
+    "month": "Mois",
+    "year": "Année",
+    "addEvent": "Ajouter un événement",
+    "deadline": "Échéance",
+    "session": "Session",
+    "reminder": "Rappel"
+  },
+  "badges": {
+    "title": "Badges",
+    "earned": "Obtenus",
+    "available": "Disponibles",
+    "locked": "Verrouillés",
+    "earnedOn": "Obtenu le {date}",
+    "requirements": "Conditions d'obtention"
+  },
+  "reports": {
+    "title": "Rapports",
+    "generate": "Générer",
+    "export": "Exporter",
+    "dateRange": "Période",
+    "userReport": "Rapport utilisateur",
+    "courseReport": "Rapport formation",
+    "groupReport": "Rapport groupe",
+    "completionRate": "Taux de complétion",
+    "averageScore": "Score moyen",
+    "totalTime": "Temps total"
+  },
+  "admin": {
+    "title": "Administration",
+    "users": "Gestion des utilisateurs",
+    "usersList": "Liste des utilisateurs",
+    "createUser": "Créer un utilisateur",
+    "editUser": "Modifier l'utilisateur",
+    "deleteUser": "Supprimer l'utilisateur",
+    "userName": "Nom",
+    "userEmail": "Email",
+    "userRole": "Rôle",
+    "roles": {
+      "admin": "Administrateur",
+      "trainer": "Formateur",
+      "manager": "Manager",
+      "learner": "Apprenant"
+    },
+    "status": "Statut",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "lastLogin": "Dernière connexion",
+    "createdAt": "Date de création",
+    "systemSettings": "Paramètres système",
+    "auditLogs": "Journaux d'audit",
+    "statistics": "Statistiques",
+    "totalUsers": "Utilisateurs totaux",
+    "totalCourses": "Formations totales",
+    "activeUsers": "Utilisateurs actifs",
+    "platformUsage": "Utilisation de la plateforme"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "profile": "Profil",
+    "notifications": "Notifications",
+    "security": "Sécurité",
+    "preferences": "Préférences",
+    "language": "Langue",
+    "theme": "Thème",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair",
+    "systemTheme": "Thème système",
+    "emailNotifications": "Notifications par email",
+    "pushNotifications": "Notifications push"
+  },
+  "landing": {
+    "hero": {
+      "title": "Plateforme de Formation Nouvelle Génération",
+      "subtitle": "Formez vos équipes avec des parcours personnalisés, des quiz interactifs et un suivi en temps réel",
+      "cta": "Commencer maintenant",
+      "ctaSecondary": "En savoir plus"
+    },
+    "features": {
+      "title": "Fonctionnalités",
+      "courses": {
+        "title": "Formations personnalisées",
+        "description": "Créez des parcours de formation adaptés avec modules, vidéos et documents"
+      },
+      "quizzes": {
+        "title": "Quiz interactifs",
+        "description": "Évaluez les connaissances avec des quiz personnalisables et des feedbacks instantanés"
+      },
+      "groups": {
+        "title": "Gestion des groupes",
+        "description": "Organisez vos apprenants en groupes et assignez des formations ciblées"
+      },
+      "calendar": {
+        "title": "Planification avancée",
+        "description": "Planifiez vos formations sur le long terme avec un calendrier intégré"
+      },
+      "analytics": {
+        "title": "Rapports et analytics",
+        "description": "Suivez la progression de vos équipes avec des tableaux de bord détaillés"
+      },
+      "badges": {
+        "title": "Gamification",
+        "description": "Motivez vos apprenants avec des badges et des récompenses"
+      }
+    },
+    "footer": {
+      "rights": "Tous droits réservés"
+    }
+  }
+}

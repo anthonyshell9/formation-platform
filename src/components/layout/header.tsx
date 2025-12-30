@@ -1,6 +1,7 @@
 'use client'
 
 import { signOut, useSession } from 'next-auth/react'
+import { useTranslations } from 'next-intl'
 import { Bell, Moon, Sun, LogOut, User, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,10 +16,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Input } from '@/components/ui/input'
 import { useTheme } from 'next-themes'
 import Link from 'next/link'
+import { LanguageSwitcher } from '@/components/language-switcher'
 
 export function Header() {
   const { data: session } = useSession()
   const { theme, setTheme } = useTheme()
+  const t = useTranslations('nav')
+  const tSettings = useTranslations('settings')
+  const tCommon = useTranslations('common')
 
   const initials = session?.user?.name
     ?.split(' ')
@@ -32,13 +37,15 @@ export function Header() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Rechercher une formation..."
+            placeholder={tCommon('search') + '...'}
             className="pl-9"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
+
         <Button
           variant="ghost"
           size="icon"
@@ -46,7 +53,7 @@ export function Header() {
         >
           <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
+          <span className="sr-only">{tSettings('theme')}</span>
         </Button>
 
         <Button variant="ghost" size="icon" className="relative">
@@ -78,7 +85,7 @@ export function Header() {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/profile">
                 <User className="mr-2 h-4 w-4" />
-                Profil
+                {tSettings('profile')}
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -87,7 +94,7 @@ export function Header() {
               onClick={() => signOut({ callbackUrl: '/' })}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Se déconnecter
+              {t('logout')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
