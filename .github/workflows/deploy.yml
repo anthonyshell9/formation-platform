@@ -63,8 +63,7 @@ jobs:
           package: deploy.zip
 
       - name: Run database migrations
-        run: |
-          az webapp ssh --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group rg-formation-platform-prod --command "cd /home/site/wwwroot && npx prisma migrate deploy"
+        run: npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
