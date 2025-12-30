@@ -43,11 +43,11 @@ export default async function CoursesPage({ searchParams }: Props) {
     ]
   }
 
-  if (category) {
+  if (category && category !== 'all') {
     where.category = category
   }
 
-  if (difficulty) {
+  if (difficulty && difficulty !== 'all') {
     where.difficulty = difficulty
   }
 
@@ -123,25 +123,25 @@ export default async function CoursesPage({ searchParams }: Props) {
             />
           </form>
         </div>
-        <Select defaultValue={category}>
+        <Select defaultValue={category || 'all'}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Catégorie" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Toutes</SelectItem>
+            <SelectItem value="all">Toutes</SelectItem>
             {categories.map(cat => (
-              <SelectItem key={cat.category} value={cat.category || ''}>
+              <SelectItem key={cat.category} value={cat.category || 'uncategorized'}>
                 {cat.category}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select defaultValue={difficulty}>
+        <Select defaultValue={difficulty || 'all'}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Difficulté" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Toutes</SelectItem>
+            <SelectItem value="all">Toutes</SelectItem>
             <SelectItem value="beginner">Débutant</SelectItem>
             <SelectItem value="intermediate">Intermédiaire</SelectItem>
             <SelectItem value="advanced">Avancé</SelectItem>
