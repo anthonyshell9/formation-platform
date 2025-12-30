@@ -1,5 +1,7 @@
 import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma/client'
+
+const SKIP_AUTH = process.env.SKIP_AUTH === 'true'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,10 +57,13 @@ export default async function CoursesPage({ searchParams }: Props) {
       include: {
         creator: { select: { id: true, name: true, image: true } },
         _count: { select: { enrollments: true, modules: true } },
-        enrollments: {
-          where: { userId: session.user.id },
-          select: { status: true },
-        },
+        // Skip user-specific enrollment query when SKIP_AUTH
+        ...(SKIP_AUTH ? {} : {
+          enrollments: {
+            where: { userId: session.user.id },
+            select: { status: true },
+          },
+        }),
       },
       orderBy: { createdAt: 'desc' },
     }),
@@ -67,6 +72,12 @@ export default async function CoursesPage({ searchParams }: Props) {
       where: { category: { not: null } },
     }),
   ])
+
+  // Add empty enrollments array for SKIP_AUTH mode
+  const coursesWithEnrollments = courses.map(course => ({
+    ...course,
+    enrollments: 'enrollments' in course ? course.enrollments : [],
+  }))
 
   const difficultyColors: Record<string, string> = {
     beginner: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
@@ -139,7 +150,7 @@ export default async function CoursesPage({ searchParams }: Props) {
       </div>
 
       {/* Courses Grid */}
-      {courses.length === 0 ? (
+      {coursesWithEnrollments.length === 0 ? (
         <Card className="p-12 text-center">
           <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">Aucune formation trouvée</h3>
@@ -157,7 +168,7 @@ export default async function CoursesPage({ searchParams }: Props) {
         </Card>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map(course => (
+          {coursesWithEnrollments.map(course => (
             <Card key={course.id} className="overflow-hidden flex flex-col">
               <div className="aspect-video bg-accent relative">
                 {course.thumbnail ? (
