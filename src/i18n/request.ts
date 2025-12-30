@@ -1,9 +1,17 @@
 import { getRequestConfig } from 'next-intl/server'
 import { cookies } from 'next/headers'
+// Static imports for standalone mode compatibility
+import frMessages from './messages/fr.json'
+import enMessages from './messages/en.json'
 
 export const locales = ['fr', 'en'] as const
 export type Locale = (typeof locales)[number]
 export const defaultLocale: Locale = 'fr'
+
+const messagesMap: Record<Locale, typeof frMessages> = {
+  fr: frMessages,
+  en: enMessages,
+}
 
 export default getRequestConfig(async () => {
   let locale: Locale = defaultLocale
@@ -19,17 +27,8 @@ export default getRequestConfig(async () => {
     locale = defaultLocale
   }
 
-  let messages
-  try {
-    messages = (await import(`./messages/${locale}.json`)).default
-  } catch {
-    // Fallback to French if locale file not found
-    messages = (await import('./messages/fr.json')).default
-    locale = 'fr'
-  }
-
   return {
     locale,
-    messages,
+    messages: messagesMap[locale],
   }
 })
