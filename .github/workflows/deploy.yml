@@ -71,6 +71,9 @@ jobs:
             WEBSITE_RUN_FROM_PACKAGE=0 \
             WEBSITE_NODE_DEFAULT_VERSION=~20
 
+      - name: Wait for SCM container to stabilize
+        run: sleep 60
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
