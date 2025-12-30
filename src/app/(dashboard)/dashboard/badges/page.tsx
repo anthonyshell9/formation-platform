@@ -1,14 +1,12 @@
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth/options'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Award, Trophy, Star, Target, BookOpen } from 'lucide-react'
 
 export default async function BadgesPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) redirect('/auth/signin')
+  const session = await getSession()
+  if (!session?.user) return null
 
   const [userBadges, allBadges, userStats] = await Promise.all([
     prisma.userBadge.findMany({

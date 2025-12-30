@@ -1,6 +1,5 @@
-import { getServerSession } from 'next-auth'
-import { notFound, redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth/options'
+import { getSession } from '@/lib/auth/session'
+import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -27,8 +26,8 @@ interface Props {
 }
 
 export default async function CourseDetailPage({ params }: Props) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) redirect('/auth/signin')
+  const session = await getSession()
+  if (!session?.user) return null
 
   const { courseId } = await params
 

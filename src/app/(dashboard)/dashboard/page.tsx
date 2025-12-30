@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth/options'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -81,7 +80,7 @@ async function getDashboardData(userId: string, role: Role) {
 }
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getSession()
   if (!session?.user) return null
 
   const data = await getDashboardData(session.user.id, session.user.role)

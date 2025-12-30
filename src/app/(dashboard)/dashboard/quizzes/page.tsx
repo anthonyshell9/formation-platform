@@ -1,6 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { redirect } from 'next/navigation'
-import { authOptions } from '@/lib/auth/options'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,14 +22,10 @@ import Link from 'next/link'
 import { Role } from '@prisma/client'
 
 export default async function QuizzesPage() {
-  const session = await getServerSession(authOptions)
-  if (!session?.user) redirect('/auth/signin')
+  const session = await getSession()
+  if (!session?.user) return null
 
   const isCreator = ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
-
-  if (!isCreator) {
-    redirect('/dashboard')
-  }
 
   const quizzes = await prisma.quiz.findMany({
     include: {
