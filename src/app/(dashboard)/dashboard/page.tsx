@@ -14,7 +14,54 @@ import {
 import Link from 'next/link'
 import { Role } from '@prisma/client'
 
-async function getDashboardData(userId: string, role: Role) {
+const SKIP_AUTH = process.env.SKIP_AUTH === 'true'
+
+interface DashboardData {
+  enrollments: number
+  completedCourses: number
+  totalBadges: number
+  recentProgress: Array<{
+    id: string
+    courseId: string
+    progressPercent: number
+    timeSpent: number
+    course: { id: string; title: string; thumbnail: string | null }
+  }>
+  upcomingAssignments: Array<{
+    id: string
+    startDate: Date
+    mandatory: boolean
+    course: { id: string; title: string; thumbnail: string | null }
+    group: { name: string; color: string } | null
+  }>
+  adminStats: { courses: number; users: number; quizzes: number; groups: number } | null
+}
+
+async function getDashboardData(userId: string, role: Role): Promise<DashboardData> {
+  // Skip DB queries for mock user
+  if (SKIP_AUTH) {
+    const adminStats = await Promise.all([
+      prisma.course.count(),
+      prisma.user.count(),
+      prisma.quiz.count(),
+      prisma.group.count(),
+    ]).then(([courses, users, quizzes, groups]) => ({
+      courses,
+      users,
+      quizzes,
+      groups,
+    }))
+
+    return {
+      enrollments: 0,
+      completedCourses: 0,
+      totalBadges: 0,
+      recentProgress: [],
+      upcomingAssignments: [],
+      adminStats,
+    }
+  }
+
   const [
     enrollments,
     completedCourses,
@@ -84,12 +131,13 @@ export default async function DashboardPage() {
   if (!session?.user) return null
 
   const data = await getDashboardData(session.user.id, session.user.role)
+  const userName = SKIP_AUTH ? 'Admin' : session.user.name?.split(' ')[0]
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">
-          Bonjour, {session.user.name?.split(' ')[0]}
+          Bonjour, {userName}
         </h1>
         <p className="text-muted-foreground">
           Voici un aperçu de votre progression
