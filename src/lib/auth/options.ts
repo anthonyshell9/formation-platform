@@ -19,41 +19,27 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'azure-ad' && user.email) {
-        // Update or create user with Azure AD ID
-        await prisma.user.upsert({
-          where: { email: user.email },
-          update: { azureAdId: account.providerAccountId },
-          create: {
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            azureAdId: account.providerAccountId,
-            role: Role.LEARNER,
-          },
-        })
-      }
+    async signIn() {
+      // PrismaAdapter handles user creation automatically
       return true
     },
     async session({ session, user }) {
-      if (session.user) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: user.email! },
-          select: { id: true, role: true },
-        })
-        if (dbUser) {
-          session.user.id = dbUser.id
-          session.user.role = dbUser.role
+      if (session.user && user) {
+        session.user.id = user.id
+        // Fetch role from database
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { role: true },
+          })
+          if (dbUser) {
+            session.user.role = dbUser.role
+          }
+        } catch (error) {
+          console.error('Session callback error:', error)
         }
       }
       return session
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-      }
-      return token
     },
   },
   pages: {
