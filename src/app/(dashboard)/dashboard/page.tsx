@@ -56,7 +56,7 @@ async function getDashboardData(userId: string, role: Role) {
 
   // Admin/Trainer stats
   let adminStats = null
-  if ([Role.ADMIN, Role.TRAINER].includes(role)) {
+  if (([Role.ADMIN, Role.TRAINER] as Role[]).includes(role)) {
     adminStats = await Promise.all([
       prisma.course.count(),
       prisma.user.count(),

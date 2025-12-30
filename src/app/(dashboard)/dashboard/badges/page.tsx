@@ -4,18 +4,7 @@ import { authOptions } from '@/lib/auth/options'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Award, Trophy, Star, Target, BookOpen, Clock, Flame } from 'lucide-react'
-
-const badgeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  trophy: Trophy,
-  star: Star,
-  target: Target,
-  book: BookOpen,
-  clock: Clock,
-  flame: Flame,
-  default: Award,
-}
+import { Award, Trophy, Star, Target, BookOpen } from 'lucide-react'
 
 export default async function BadgesPage() {
   const session = await getServerSession(authOptions)
@@ -44,7 +33,7 @@ export default async function BadgesPage() {
     ]),
   ])
 
-  const [completedCourses, passedQuizzes, totalTime] = userStats
+  const [completedCourses, passedQuizzes] = userStats
   const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId))
   const totalPoints = userBadges.reduce((acc, ub) => acc + ub.badge.points, 0)
 

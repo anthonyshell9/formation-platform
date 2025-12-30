@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    if (![Role.ADMIN, Role.TRAINER].includes(session.user.role)) {
+    if (!([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 

@@ -38,7 +38,7 @@ export default function SignInPage() {
             Se connecter avec Microsoft
           </Button>
           <p className="text-xs text-center text-muted-foreground">
-            En vous connectant, vous acceptez nos conditions d'utilisation
+            En vous connectant, vous acceptez nos conditions
           </p>
         </CardContent>
       </Card>

@@ -20,7 +20,7 @@ export default async function GroupsPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect('/auth/signin')
 
-  const isManager = [Role.ADMIN, Role.MANAGER].includes(session.user.role)
+  const isManager = ([Role.ADMIN, Role.MANAGER] as Role[]).includes(session.user.role)
 
   const groups = await prisma.group.findMany({
     where: isManager

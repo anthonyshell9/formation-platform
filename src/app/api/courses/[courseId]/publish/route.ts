@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Formation non trouvée' }, { status: 404 })
     }
 
-    if (![Role.ADMIN].includes(session.user.role) && course.creatorId !== session.user.id) {
+    if (session.user.role !== Role.ADMIN && course.creatorId !== session.user.id) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 

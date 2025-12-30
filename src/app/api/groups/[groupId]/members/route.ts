@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    if (![Role.ADMIN, Role.MANAGER].includes(session.user.role)) {
+    if (!([Role.ADMIN, Role.MANAGER] as Role[]).includes(session.user.role)) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 
@@ -116,7 +116,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    if (![Role.ADMIN, Role.MANAGER].includes(session.user.role)) {
+    if (!([Role.ADMIN, Role.MANAGER] as Role[]).includes(session.user.role)) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 

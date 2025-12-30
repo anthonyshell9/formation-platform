@@ -27,7 +27,7 @@ export default async function QuizzesPage() {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect('/auth/signin')
 
-  const isCreator = [Role.ADMIN, Role.TRAINER].includes(session.user.role)
+  const isCreator = ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
 
   if (!isCreator) {
     redirect('/dashboard')
@@ -50,7 +50,7 @@ export default async function QuizzesPage() {
         <div>
           <h1 className="text-3xl font-bold">Quiz</h1>
           <p className="text-muted-foreground">
-            Créez et gérez vos quiz d'évaluation
+            Créez et gérez vos quiz pour évaluer les apprenants
           </p>
         </div>
         <Button asChild>

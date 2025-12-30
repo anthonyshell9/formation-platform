@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar } from '@/components/ui/calendar'
 import {
   ChevronLeft,
   ChevronRight,
@@ -111,7 +110,7 @@ export default function CalendarPage() {
                 size="sm"
                 onClick={() => setCurrentDate(new Date())}
               >
-                Aujourd'hui
+                Ce jour
               </Button>
               <Button
                 variant="outline"

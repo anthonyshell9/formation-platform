@@ -6,7 +6,7 @@ async function main() {
   console.log('Seeding database...')
 
   // Create admin user
-  const admin = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'admin@example.com' },
     update: {},
     create: {
@@ -28,7 +28,7 @@ async function main() {
   })
 
   // Create manager
-  const manager = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: 'manager@example.com' },
     update: {},
     create: {

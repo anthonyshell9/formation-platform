@@ -29,7 +29,7 @@ export default async function CoursesPage({ searchParams }: Props) {
   const category = params.category || ''
   const difficulty = params.difficulty || ''
 
-  const isCreator = [Role.ADMIN, Role.TRAINER].includes(session.user.role)
+  const isCreator = ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
 
   const where: Record<string, unknown> = {
     status: isCreator ? undefined : 'PUBLISHED',

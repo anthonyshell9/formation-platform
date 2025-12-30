@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Check access for non-published courses
     if (course.status !== CourseStatus.PUBLISHED) {
-      if (![Role.ADMIN, Role.TRAINER].includes(session.user.role) && course.creatorId !== session.user.id) {
+      if (!([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role) && course.creatorId !== session.user.id) {
         return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
       }
     }
@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Formation non trouvée' }, { status: 404 })
     }
 
-    if (![Role.ADMIN].includes(session.user.role) && existingCourse.creatorId !== session.user.id) {
+    if (session.user.role !== Role.ADMIN && existingCourse.creatorId !== session.user.id) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 

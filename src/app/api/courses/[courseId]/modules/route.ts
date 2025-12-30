@@ -45,7 +45,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
     }
 
-    if (![Role.ADMIN, Role.TRAINER].includes(session.user.role)) {
+    if (!([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)) {
       return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     })
     const order = (lastModule?.order ?? -1) + 1
 
-    const module = await prisma.module.create({
+    const newModule = await prisma.module.create({
       data: {
         ...validatedData,
         order,
@@ -87,11 +87,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       userId: session.user.id,
       action: AuditActions.MODULE_CREATE,
       resource: 'module',
-      resourceId: module.id,
-      details: { title: module.title, courseId },
+      resourceId: newModule.id,
+      details: { title: newModule.title, courseId },
     })
 
-    return NextResponse.json(module, { status: 201 })
+    return NextResponse.json(newModule, { status: 201 })
   } catch (error) {
     console.error('POST /api/courses/[courseId]/modules error:', error)
     if (error instanceof Error && error.name === 'ZodError') {

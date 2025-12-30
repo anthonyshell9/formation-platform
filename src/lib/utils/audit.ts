@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma/client'
 import { headers } from 'next/headers'
+import { Prisma } from '@prisma/client'
 
 interface AuditLogParams {
   userId?: string | null
@@ -20,7 +21,7 @@ export async function createAuditLog(params: AuditLogParams) {
       action: params.action,
       resource: params.resource,
       resourceId: params.resourceId,
-      details: params.details,
+      details: params.details as Prisma.InputJsonValue | undefined,
       ip,
       userAgent,
     },

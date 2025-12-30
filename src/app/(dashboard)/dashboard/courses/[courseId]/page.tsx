@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 import {
   ArrowLeft,
   BookOpen,
@@ -55,7 +54,7 @@ export default async function CourseDetailPage({ params }: Props) {
   if (!course) notFound()
 
   // Check access
-  const isCreator = [Role.ADMIN, Role.TRAINER].includes(session.user.role)
+  const isCreator = ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
   if (course.status !== CourseStatus.PUBLISHED && !isCreator && course.creatorId !== session.user.id) {
     notFound()
   }
@@ -215,7 +214,7 @@ export default async function CourseDetailPage({ params }: Props) {
             >
               <Button type="submit">
                 <Play className="mr-2 h-4 w-4" />
-                S'inscrire
+                Rejoindre
               </Button>
             </form>
           </CardContent>
@@ -228,7 +227,7 @@ export default async function CourseDetailPage({ params }: Props) {
         {course.modules.length === 0 ? (
           <Card className="p-8 text-center">
             <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Aucun module pour l'instant</p>
+            <p className="text-muted-foreground">Aucun module pour le moment</p>
           </Card>
         ) : (
           course.modules.map((module, moduleIndex) => (
