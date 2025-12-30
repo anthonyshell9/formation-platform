@@ -4,6 +4,9 @@ import { GraduationCap, BookOpen, Users, Award, Calendar, Play, BarChart3 } from
 import { getTranslations } from 'next-intl/server'
 import { LandingLanguageSwitcher } from '@/components/landing-language-switcher'
 
+// Force dynamic rendering to support i18n with cookies
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const t = await getTranslations('landing')
   const tAuth = await getTranslations('auth')
