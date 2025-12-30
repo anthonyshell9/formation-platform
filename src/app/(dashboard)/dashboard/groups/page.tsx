@@ -14,14 +14,18 @@ import {
 import Link from 'next/link'
 import { Role } from '@prisma/client'
 
+const SKIP_AUTH = process.env.SKIP_AUTH === 'true'
+
 export default async function GroupsPage() {
   const session = await getSession()
   if (!session?.user) return null
 
-  const isManager = ([Role.ADMIN, Role.MANAGER] as Role[]).includes(session.user.role)
+  // In SKIP_AUTH mode, treat as admin
+  const isManager = SKIP_AUTH || ([Role.ADMIN, Role.MANAGER] as Role[]).includes(session.user.role)
 
+  // In SKIP_AUTH mode or as manager, show all groups
   const groups = await prisma.group.findMany({
-    where: isManager
+    where: (SKIP_AUTH || isManager)
       ? undefined
       : { members: { some: { userId: session.user.id } } },
     include: {

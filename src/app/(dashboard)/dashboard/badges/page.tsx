@@ -4,34 +4,42 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Award, Trophy, Star, Target, BookOpen } from 'lucide-react'
 
+const SKIP_AUTH = process.env.SKIP_AUTH === 'true'
+
 export default async function BadgesPage() {
   const session = await getSession()
   if (!session?.user) return null
 
-  const [userBadges, allBadges, userStats] = await Promise.all([
-    prisma.userBadge.findMany({
-      where: { userId: session.user.id },
-      include: { badge: true },
-      orderBy: { earnedAt: 'desc' },
-    }),
-    prisma.badge.findMany({
-      orderBy: [{ category: 'asc' }, { points: 'asc' }],
-    }),
-    prisma.$transaction([
-      prisma.enrollment.count({
-        where: { userId: session.user.id, status: 'COMPLETED' },
-      }),
-      prisma.quizAttempt.count({
-        where: { userId: session.user.id, passed: true },
-      }),
-      prisma.courseProgress.aggregate({
-        where: { userId: session.user.id },
-        _sum: { timeSpent: true },
-      }),
-    ]),
-  ])
+  // Get all badges (no user-specific query needed)
+  const allBadges = await prisma.badge.findMany({
+    orderBy: [{ category: 'asc' }, { points: 'asc' }],
+  })
 
-  const [completedCourses, passedQuizzes] = userStats
+  // Skip user-specific queries in SKIP_AUTH mode
+  let userBadges: { badge: typeof allBadges[0]; earnedAt: Date; badgeId: string }[] = []
+  let completedCourses = 0
+  let passedQuizzes = 0
+
+  if (!SKIP_AUTH) {
+    const [fetchedUserBadges, userStats] = await Promise.all([
+      prisma.userBadge.findMany({
+        where: { userId: session.user.id },
+        include: { badge: true },
+        orderBy: { earnedAt: 'desc' },
+      }),
+      prisma.$transaction([
+        prisma.enrollment.count({
+          where: { userId: session.user.id, status: 'COMPLETED' },
+        }),
+        prisma.quizAttempt.count({
+          where: { userId: session.user.id, passed: true },
+        }),
+      ]),
+    ])
+    userBadges = fetchedUserBadges
+    completedCourses = userStats[0]
+    passedQuizzes = userStats[1]
+  }
   const earnedBadgeIds = new Set(userBadges.map(ub => ub.badgeId))
   const totalPoints = userBadges.reduce((acc, ub) => acc + ub.badge.points, 0)
 

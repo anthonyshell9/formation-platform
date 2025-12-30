@@ -21,11 +21,14 @@ import {
 import Link from 'next/link'
 import { Role } from '@prisma/client'
 
+const SKIP_AUTH = process.env.SKIP_AUTH === 'true'
+
 export default async function QuizzesPage() {
   const session = await getSession()
   if (!session?.user) return null
 
-  const isCreator = ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
+  // In SKIP_AUTH mode, treat as admin
+  const isCreator = SKIP_AUTH || ([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)
 
   const quizzes = await prisma.quiz.findMany({
     include: {
