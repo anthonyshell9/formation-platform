@@ -7,7 +7,6 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: formation-platform
-  AZURE_WEBAPP_PACKAGE_PATH: '.'
   NODE_VERSION: '20.x'
 
 jobs:
@@ -41,26 +40,43 @@ jobs:
           AZURE_AD_CLIENT_SECRET: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
           AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
 
+      - name: Prepare standalone deployment
+        run: |
+          # Copy static files to standalone
+          cp -r .next/static .next/standalone/.next/static
+          cp -r public .next/standalone/public
+
+          # Copy prisma files
+          mkdir -p .next/standalone/prisma
+          cp prisma/schema.prisma .next/standalone/prisma/
+
+          # Create startup script
+          echo 'cd /home/site/wwwroot && node server.js' > .next/standalone/startup.sh
+          chmod +x .next/standalone/startup.sh
+
       - name: Create deployment package
         run: |
-          zip -r deploy.zip . \
-            -x "node_modules/*" \
-            -x ".git/*" \
-            -x ".github/*" \
-            -x "infra/*" \
-            -x "*.md" \
-            -x ".env*"
+          cd .next/standalone
+          zip -r ../../deploy.zip .
 
       - name: Login to Azure
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Configure Azure Web App
+        run: |
+          az webapp config appsettings set -n ${{ env.AZURE_WEBAPP_NAME }} -g rg-formation-platform-prod --settings \
+            SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+            WEBSITE_RUN_FROM_PACKAGE=0 \
+            WEBSITE_NODE_DEFAULT_VERSION=~20
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           package: deploy.zip
+          startup-command: 'node server.js'
 
       - name: Run database migrations
         run: npx prisma migrate deploy
