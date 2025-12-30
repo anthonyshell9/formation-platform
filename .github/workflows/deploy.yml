@@ -50,6 +50,10 @@ jobs:
           mkdir -p .next/standalone/prisma
           cp prisma/schema.prisma .next/standalone/prisma/
 
+          # Copy i18n message files
+          mkdir -p .next/standalone/src/i18n/messages
+          cp -r src/i18n/messages/*.json .next/standalone/src/i18n/messages/
+
           # Create startup script
           echo 'cd /home/site/wwwroot && node server.js' > .next/standalone/startup.sh
           chmod +x .next/standalone/startup.sh
