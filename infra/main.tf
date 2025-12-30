@@ -103,25 +103,25 @@ resource "azurerm_storage_account" "main" {
 # Blob Containers
 resource "azurerm_storage_container" "videos" {
   name                  = "videos"
-  storage_account_id    = azurerm_storage_account.main.id
+  storage_account_name  = azurerm_storage_account.main.name
   container_access_type = "blob"
 }
 
 resource "azurerm_storage_container" "images" {
   name                  = "images"
-  storage_account_id    = azurerm_storage_account.main.id
+  storage_account_name  = azurerm_storage_account.main.name
   container_access_type = "blob"
 }
 
 resource "azurerm_storage_container" "documents" {
   name                  = "documents"
-  storage_account_id    = azurerm_storage_account.main.id
+  storage_account_name  = azurerm_storage_account.main.name
   container_access_type = "blob"
 }
 
 resource "azurerm_storage_container" "certificates" {
   name                  = "certificates"
-  storage_account_id    = azurerm_storage_account.main.id
+  storage_account_name  = azurerm_storage_account.main.name
   container_access_type = "blob"
 }
 
