@@ -17,6 +17,13 @@ import {
   Video,
   FileQuestion,
   Edit,
+  Puzzle,
+  ArrowRightLeft,
+  TextCursor,
+  MousePointer,
+  ArrowUpDown,
+  Layers,
+  Link as LinkIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { Role, CourseStatus } from '@prisma/client'
@@ -83,12 +90,18 @@ export default async function CourseDetailPage({ params }: Props) {
   const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0)
   const completedLessons = progress?.lessons.filter(l => l.completed).length || 0
 
-  const contentTypeIcon = {
+  const contentTypeIcon: Record<string, typeof Video> = {
     VIDEO: Video,
     TEXT: FileText,
     PDF: FileText,
     QUIZ: FileQuestion,
-    EXTERNAL_LINK: FileText,
+    EXTERNAL_LINK: LinkIcon,
+    DRAG_DROP: Puzzle,
+    MATCHING: ArrowRightLeft,
+    FILL_BLANK: TextCursor,
+    HOTSPOT: MousePointer,
+    SORTING: ArrowUpDown,
+    FLASHCARDS: Layers,
   }
 
   return (
