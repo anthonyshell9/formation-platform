@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -31,31 +29,29 @@ import { ArrowLeft, Loader2, Plus, Trash2, GripVertical } from 'lucide-react'
 import Link from 'next/link'
 import { Checkbox } from '@/components/ui/checkbox'
 
-const optionSchema = z.object({
-  text: z.string().min(1, 'Le texte est requis'),
-  isCorrect: z.boolean().default(false),
-})
+interface OptionInput {
+  text: string
+  isCorrect: boolean
+}
 
-const questionSchema = z.object({
-  type: z.enum(['SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_ANSWER']),
-  question: z.string().min(1, 'La question est requise'),
-  explanation: z.string().optional(),
-  points: z.coerce.number().int().min(1).default(1),
-  options: z.array(optionSchema).min(2, 'Au moins 2 options sont requises'),
-})
+interface QuestionInput {
+  type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'SHORT_ANSWER'
+  question: string
+  explanation?: string
+  points: number
+  options: OptionInput[]
+}
 
-const quizFormSchema = z.object({
-  title: z.string().min(1, 'Le titre est requis').max(200),
-  description: z.string().optional(),
-  timeLimit: z.coerce.number().int().min(1).optional().nullable(),
-  passingScore: z.coerce.number().int().min(0).max(100).default(70),
-  shuffleQuestions: z.boolean().default(false),
-  showCorrectAnswers: z.boolean().default(true),
-  maxAttempts: z.coerce.number().int().min(1).optional().nullable(),
-  questions: z.array(questionSchema).optional(),
-})
-
-type QuizFormInput = z.infer<typeof quizFormSchema>
+interface QuizFormInput {
+  title: string
+  description?: string
+  timeLimit?: number | null
+  passingScore: number
+  shuffleQuestions: boolean
+  showCorrectAnswers: boolean
+  maxAttempts?: number | null
+  questions: QuestionInput[]
+}
 
 const questionTypes = [
   { value: 'SINGLE_CHOICE', label: 'Choix unique' },
@@ -69,7 +65,6 @@ export default function CreateQuizPage() {
   const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<QuizFormInput>({
-    resolver: zodResolver(quizFormSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -89,7 +84,7 @@ export default function CreateQuizPage() {
 
   const addQuestion = () => {
     appendQuestion({
-      type: 'SINGLE_CHOICE',
+      type: 'SINGLE_CHOICE' as const,
       question: '',
       explanation: '',
       points: 1,
@@ -207,9 +202,11 @@ export default function CreateQuizPage() {
                           type="number"
                           min="1"
                           placeholder="Illimité"
-                          {...field}
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormDescription>Laissez vide pour illimité</FormDescription>
@@ -225,7 +222,16 @@ export default function CreateQuizPage() {
                     <FormItem>
                       <FormLabel>Score minimum (%)</FormLabel>
                       <FormControl>
-                        <Input type="number" min="0" max="100" {...field} />
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={field.value}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                        />
                       </FormControl>
                       <FormDescription>Pour réussir le quiz</FormDescription>
                       <FormMessage />
@@ -244,9 +250,11 @@ export default function CreateQuizPage() {
                           type="number"
                           min="1"
                           placeholder="Illimité"
-                          {...field}
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormDescription>Laissez vide pour illimité</FormDescription>
@@ -394,7 +402,15 @@ function QuestionEditor({ index, form, onRemove }: QuestionEditorProps) {
               <FormItem>
                 <FormLabel>Points</FormLabel>
                 <FormControl>
-                  <Input type="number" min="1" {...field} />
+                  <Input
+                    type="number"
+                    min="1"
+                    value={field.value}
+                    onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
