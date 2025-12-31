@@ -16,6 +16,7 @@ export const authOptions: NextAuthOptions = {
           scope: 'openid email profile User.Read',
         },
       },
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   callbacks: {
