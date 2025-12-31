@@ -351,13 +351,20 @@ export default function EditCoursePage() {
                       {module.lessons?.length || 0} leçons
                     </span>
                     {module.id && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteModule(module.id!, index)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link href={`/dashboard/courses/${courseId}/modules/${module.id}`}>
+                            Éditer
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => deleteModule(module.id!, index)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardContent>
