@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
   BookOpen,
-  FileQuestion,
   Users,
   Calendar,
   BarChart3,
@@ -18,6 +17,9 @@ import {
   ChevronRight,
   Shield,
   UserCog,
+  FolderOpen,
+  FileCheck,
+  UsersRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
@@ -30,19 +32,23 @@ interface NavItem {
   roles?: Role[]
 }
 
-const navItems: NavItem[] = [
+// Items visible to all users
+const userItems: NavItem[] = [
   { titleKey: 'dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { titleKey: 'courses', href: '/dashboard/courses', icon: BookOpen },
   { titleKey: 'myCourses', href: '/dashboard/my-courses', icon: GraduationCap },
-  { titleKey: 'quizzes', href: '/dashboard/quizzes', icon: FileQuestion, roles: [Role.ADMIN, Role.TRAINER] },
-  { titleKey: 'groups', href: '/dashboard/groups', icon: Users, roles: [Role.ADMIN, Role.MANAGER] },
+  { titleKey: 'myDocuments', href: '/dashboard/my-documents', icon: FileCheck },
   { titleKey: 'calendar', href: '/dashboard/calendar', icon: Calendar },
   { titleKey: 'badges', href: '/dashboard/badges', icon: Award },
-  { titleKey: 'reports', href: '/dashboard/reports', icon: BarChart3, roles: [Role.ADMIN, Role.MANAGER] },
 ]
 
+// Admin section items
 const adminItems: NavItem[] = [
+  { titleKey: 'courses', href: '/dashboard/admin/courses', icon: BookOpen, roles: [Role.ADMIN, Role.TRAINER] },
+  { titleKey: 'documents', href: '/dashboard/admin/documents', icon: FolderOpen, roles: [Role.ADMIN, Role.TRAINER] },
+  { titleKey: 'assignments', href: '/dashboard/admin/assignments', icon: Calendar, roles: [Role.ADMIN, Role.TRAINER, Role.MANAGER] },
+  { titleKey: 'groups', href: '/dashboard/admin/groups', icon: UsersRound, roles: [Role.ADMIN, Role.MANAGER] },
   { titleKey: 'users', href: '/dashboard/admin/users', icon: UserCog, roles: [Role.ADMIN] },
+  { titleKey: 'reports', href: '/dashboard/admin/reports', icon: BarChart3, roles: [Role.ADMIN, Role.MANAGER] },
   { titleKey: 'settings', href: '/dashboard/admin/settings', icon: Settings, roles: [Role.ADMIN] },
 ]
 
@@ -55,9 +61,7 @@ export function Sidebar({ userRole }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const t = useTranslations('nav')
 
-  const filteredItems = navItems.filter(
-    item => !item.roles || item.roles.includes(userRole)
-  )
+  const isAdmin = ([Role.ADMIN, Role.TRAINER, Role.MANAGER] as Role[]).includes(userRole)
 
   const filteredAdminItems = adminItems.filter(
     item => !item.roles || item.roles.includes(userRole)
@@ -91,8 +95,15 @@ export function Sidebar({ userRole }: SidebarProps) {
         </Button>
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
-        {filteredItems.map(item => {
+      <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
+        {/* User section */}
+        {!collapsed && (
+          <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <Users className="h-3 w-3" />
+            {t('mySpace')}
+          </div>
+        )}
+        {userItems.map(item => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
           return (
             <Link
@@ -113,7 +124,8 @@ export function Sidebar({ userRole }: SidebarProps) {
           )
         })}
 
-        {filteredAdminItems.length > 0 && (
+        {/* Admin section */}
+        {isAdmin && filteredAdminItems.length > 0 && (
           <>
             <div className={cn('my-4 border-t', collapsed && 'mx-2')} />
             {!collapsed && (

@@ -26,13 +26,19 @@ export async function GET(request: NextRequest) {
       where.startDate = { gte: new Date() }
     }
 
-    // Filter by user's groups if learner
+    // Filter by user's groups or direct assignments if learner
     if (session.user.role === Role.LEARNER) {
       const userGroups = await prisma.groupMember.findMany({
         where: { userId: session.user.id },
         select: { groupId: true },
       })
-      where.groupId = { in: userGroups.map(g => g.groupId) }
+      const groupIds = userGroups.map(g => g.groupId)
+
+      // Get assignments for user's groups OR directly assigned to user
+      where.OR = [
+        { groupId: { in: groupIds } },
+        { userId: session.user.id },
+      ]
     }
 
     const assignments = await prisma.courseAssignment.findMany({
@@ -43,6 +49,9 @@ export async function GET(request: NextRequest) {
         },
         group: {
           select: { id: true, name: true, color: true },
+        },
+        user: {
+          select: { id: true, name: true, email: true },
         },
       },
       orderBy: { startDate: 'asc' },
@@ -125,6 +134,52 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle direct user assignment
+    if (validatedData.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: validatedData.userId },
+      })
+
+      if (!user) {
+        return NextResponse.json({ error: 'Utilisateur non trouve' }, { status: 404 })
+      }
+
+      // Auto-enroll user
+      await prisma.enrollment.upsert({
+        where: {
+          userId_courseId: {
+            userId: validatedData.userId,
+            courseId: validatedData.courseId,
+          },
+        },
+        create: {
+          userId: validatedData.userId,
+          courseId: validatedData.courseId,
+          status: EnrollmentStatus.ENROLLED,
+          deadline: validatedData.endDate ? new Date(validatedData.endDate) : null,
+        },
+        update: {
+          deadline: validatedData.endDate ? new Date(validatedData.endDate) : null,
+        },
+      })
+
+      // Create progress if not exists
+      await prisma.courseProgress.upsert({
+        where: {
+          userId_courseId: {
+            userId: validatedData.userId,
+            courseId: validatedData.courseId,
+          },
+        },
+        create: {
+          userId: validatedData.userId,
+          courseId: validatedData.courseId,
+          progressPercent: 0,
+        },
+        update: {},
+      })
+    }
+
     const assignment = await prisma.courseAssignment.create({
       data: {
         ...validatedData,
@@ -138,6 +193,9 @@ export async function POST(request: NextRequest) {
         group: {
           select: { id: true, name: true, color: true },
         },
+        user: {
+          select: { id: true, name: true, email: true },
+        },
       },
     })
 
@@ -149,6 +207,7 @@ export async function POST(request: NextRequest) {
       details: {
         courseId: validatedData.courseId,
         groupId: validatedData.groupId,
+        userId: validatedData.userId,
         startDate: validatedData.startDate,
       },
     })

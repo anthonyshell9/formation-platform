@@ -29,6 +29,9 @@
     "dashboard": "Dashboard",
     "courses": "Courses",
     "myCourses": "My Courses",
+    "myDocuments": "My Documents",
+    "documents": "Documents",
+    "assignments": "Scheduling",
     "quizzes": "Quizzes",
     "groups": "Groups",
     "calendar": "Calendar",
@@ -37,6 +40,7 @@
     "settings": "Settings",
     "admin": "Administration",
     "users": "Users",
+    "mySpace": "My Space",
     "logout": "Logout"
   },
   "auth": {

@@ -15,11 +15,15 @@ export const groupMemberSchema = z.object({
 export const courseAssignmentSchema = z.object({
   courseId: z.string().cuid(),
   groupId: z.string().cuid().optional().nullable(),
+  userId: z.string().cuid().optional().nullable(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional().nullable(),
   mandatory: z.boolean().default(false),
   reminderDays: z.array(z.number().int()).default([7, 3, 1]),
-})
+}).refine(
+  (data) => data.groupId || data.userId,
+  { message: 'Either groupId or userId must be provided' }
+)
 
 export type GroupInput = z.infer<typeof groupSchema>
 export type GroupMemberInput = z.infer<typeof groupMemberSchema>

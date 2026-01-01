@@ -25,6 +25,8 @@ model User {
   role          Role      @default(LEARNER)
   azureAdId     String?   @unique
   emailVerified DateTime?
+  isActive      Boolean   @default(true)
+  isPreregistered Boolean @default(false) // User created by admin, waiting for SSO login
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -40,6 +42,8 @@ model User {
   createdCourses Course[]        @relation("CourseCreator")
   createdQuizzes Quiz[]          @relation("QuizCreator")
   auditLogs     AuditLog[]
+  documentAcks  DocumentAcknowledgment[]
+  courseAssignmentsUser CourseAssignment[] @relation("AssignedUser")
 
   @@map("users")
 }
@@ -134,6 +138,7 @@ enum ContentType {
   HOTSPOT          // Click on image hotspots
   SORTING          // Sort items in order
   FLASHCARDS       // Flashcard learning
+  DOCUMENT         // Document requiring acknowledgment/signature
 }
 
 model Course {
@@ -188,6 +193,7 @@ model Lesson {
   order       Int
   moduleId    String
   quizId      String?     @unique
+  requiresAck Boolean     @default(false) // For DOCUMENT type - requires acknowledgment
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -195,6 +201,7 @@ model Lesson {
   quiz     Quiz?           @relation(fields: [quizId], references: [id])
   progress LessonProgress[]
   media    LessonMedia[]
+  acknowledgments DocumentAcknowledgment[]
 
   @@map("lessons")
 }
@@ -376,17 +383,38 @@ model CourseAssignment {
   id           String    @id @default(cuid())
   courseId     String
   groupId      String?
+  userId       String?   // For individual user assignment
   startDate    DateTime
   endDate      DateTime?
   mandatory    Boolean   @default(false)
   reminderDays Int[]     @default([7, 3, 1]) // days before deadline
+  notificationSent Boolean @default(false)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   group  Group? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user   User?  @relation("AssignedUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("course_assignments")
+}
+
+// ============== DOCUMENT ACKNOWLEDGMENT ==============
+
+model DocumentAcknowledgment {
+  id           String   @id @default(cuid())
+  lessonId     String
+  userId       String
+  acknowledgedAt DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
+  signatureHash String? // Hash for audit trail
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, userId])
+  @@map("document_acknowledgments")
 }
 
 // ============== BADGES & CERTIFICATES ==============

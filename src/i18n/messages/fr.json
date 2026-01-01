@@ -29,6 +29,9 @@
     "dashboard": "Tableau de bord",
     "courses": "Formations",
     "myCourses": "Mes formations",
+    "myDocuments": "Mes documents",
+    "documents": "Documents",
+    "assignments": "Planification",
     "quizzes": "Quiz",
     "groups": "Groupes",
     "calendar": "Calendrier",
@@ -37,6 +40,7 @@
     "settings": "Paramètres",
     "admin": "Administration",
     "users": "Utilisateurs",
+    "mySpace": "Mon espace",
     "logout": "Déconnexion"
   },
   "auth": {

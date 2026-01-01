@@ -22,23 +22,32 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { role } = body
+    const { role, isActive } = body
 
-    if (!Object.values(Role).includes(role)) {
-      return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    const updateData: { role?: Role; isActive?: boolean } = {}
+
+    if (role !== undefined) {
+      if (!Object.values(Role).includes(role)) {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+      }
+      updateData.role = role
+    }
+
+    if (isActive !== undefined) {
+      updateData.isActive = isActive
     }
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { role },
+      data: updateData,
     })
 
     await createAuditLog({
       userId: session.user.id,
-      action: 'UPDATE_USER_ROLE',
+      action: role ? 'UPDATE_USER_ROLE' : 'UPDATE_USER_STATUS',
       resource: 'User',
       resourceId: userId,
-      details: { newRole: role },
+      details: { ...updateData },
     })
 
     return NextResponse.json(user)

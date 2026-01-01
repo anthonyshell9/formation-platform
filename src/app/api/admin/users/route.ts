@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
 import { prisma } from '@/lib/prisma/client'
@@ -23,6 +23,8 @@ export async function GET() {
         email: true,
         image: true,
         role: true,
+        isActive: true,
+        isPreregistered: true,
         createdAt: true,
         _count: {
           select: {
@@ -43,6 +45,47 @@ export async function GET() {
     return NextResponse.json({ users, stats })
   } catch (error) {
     console.error('Failed to fetch users:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (session.user.role !== Role.ADMIN) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const body = await request.json()
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: body.email },
+    })
+
+    if (existingUser) {
+      return NextResponse.json({ error: 'Un utilisateur avec cet email existe deja' }, { status: 400 })
+    }
+
+    // Create pre-registered user (will be completed on SSO login)
+    const user = await prisma.user.create({
+      data: {
+        email: body.email,
+        name: body.name || null,
+        role: body.role || Role.LEARNER,
+        isActive: true,
+        isPreregistered: true,
+      },
+    })
+
+    return NextResponse.json(user, { status: 201 })
+  } catch (error) {
+    console.error('Failed to create user:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
