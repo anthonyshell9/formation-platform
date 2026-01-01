@@ -523,7 +523,7 @@ export default function LessonEditorPage() {
                 />
               </div>
               <div>
-                <Label>Réponses correctes (dans l'ordre)</Label>
+                <Label>Réponses correctes (dans l&apos;ordre)</Label>
                 <div className="space-y-2 mt-2">
                   {(fillBlankText.match(/\[___\]/g) || []).map((_, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
@@ -603,7 +603,7 @@ export default function LessonEditorPage() {
           {lesson.contentType === 'SORTING' && (
             <div>
               <div className="flex items-center justify-between mb-3">
-                <Label>Éléments à classer (dans l'ordre correct)</Label>
+                <Label>Éléments à classer (dans l&apos;ordre correct)</Label>
                 <Button size="sm" variant="outline" onClick={addSortingItem}>
                   <Plus className="mr-1 h-3 w-3" />
                   Élément
@@ -638,7 +638,7 @@ export default function LessonEditorPage() {
                   ))}
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                L'ordre ci-dessus est l'ordre correct. Les éléments seront mélangés lors de l'exercice.
+                L&apos;ordre ci-dessus est l&apos;ordre correct. Les éléments seront mélangés lors de l&apos;exercice.
               </p>
             </div>
           )}
@@ -690,7 +690,7 @@ export default function LessonEditorPage() {
           {lesson.contentType === 'HOTSPOT' && (
             <div className="space-y-4">
               <div>
-                <Label>URL de l'image</Label>
+                <Label>URL de l&apos;image</Label>
                 <Input
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}

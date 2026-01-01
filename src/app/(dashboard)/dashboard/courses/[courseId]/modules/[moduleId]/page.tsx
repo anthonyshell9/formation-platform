@@ -329,7 +329,7 @@ export default function ModuleEditPage() {
             <div className="text-center py-12 text-muted-foreground">
               <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Aucune leçon dans ce module</p>
-              <p className="text-sm">Cliquez sur "Ajouter une leçon" pour commencer</p>
+              <p className="text-sm">Cliquez sur &quot;Ajouter une leçon&quot; pour commencer</p>
             </div>
           ) : (
             <div className="space-y-2">

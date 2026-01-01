@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const { courseId, moduleId } = await params
 
-    const module = await prisma.module.findFirst({
+    const courseModule = await prisma.module.findFirst({
       where: { id: moduleId, courseId },
       include: {
         lessons: {
@@ -29,11 +29,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    if (!module) {
+    if (!courseModule) {
       return NextResponse.json({ error: 'Module non trouvé' }, { status: 404 })
     }
 
-    return NextResponse.json(module)
+    return NextResponse.json(courseModule)
   } catch (error) {
     console.error('GET module error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
@@ -54,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { courseId, moduleId } = await params
     const body = await request.json()
 
-    const module = await prisma.module.update({
+    const courseModule = await prisma.module.update({
       where: { id: moduleId },
       data: {
         title: body.title,
@@ -63,7 +63,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     })
 
-    return NextResponse.json(module)
+    return NextResponse.json(courseModule)
   } catch (error) {
     console.error('PATCH module error:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
