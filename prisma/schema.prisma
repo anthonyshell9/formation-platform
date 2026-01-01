@@ -27,6 +27,11 @@ model User {
   emailVerified DateTime?
   isActive      Boolean   @default(true)
   isPreregistered Boolean @default(false) // User created by admin, waiting for SSO login
+  // Local authentication fields
+  password      String?   // Hashed password for local auth
+  mfaEnabled    Boolean   @default(true) // MFA enabled by default for local users
+  mfaSecret     String?   // TOTP secret for MFA
+  mfaVerified   Boolean   @default(false) // Whether MFA is set up
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

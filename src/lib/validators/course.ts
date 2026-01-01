@@ -7,6 +7,7 @@ export const courseSchema = z.object({
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
 })
 
 export const moduleSchema = z.object({

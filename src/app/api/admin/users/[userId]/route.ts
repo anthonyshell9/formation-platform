@@ -22,9 +22,9 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { role, isActive } = body
+    const { role, isActive, mfaEnabled } = body
 
-    const updateData: { role?: Role; isActive?: boolean } = {}
+    const updateData: { role?: Role; isActive?: boolean; mfaEnabled?: boolean } = {}
 
     if (role !== undefined) {
       if (!Object.values(Role).includes(role)) {
@@ -35,6 +35,10 @@ export async function PATCH(
 
     if (isActive !== undefined) {
       updateData.isActive = isActive
+    }
+
+    if (mfaEnabled !== undefined) {
+      updateData.mfaEnabled = mfaEnabled
     }
 
     const user = await prisma.user.update({

@@ -120,6 +120,57 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+// PATCH handler - same as PUT for partial updates
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    }
+
+    const { courseId } = await params
+
+    const existingCourse = await prisma.course.findUnique({
+      where: { id: courseId },
+    })
+
+    if (!existingCourse) {
+      return NextResponse.json({ error: 'Formation non trouvée' }, { status: 404 })
+    }
+
+    if (session.user.role !== Role.ADMIN && existingCourse.creatorId !== session.user.id) {
+      return NextResponse.json({ error: 'Accès interdit' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const validatedData = courseSchema.partial().parse(body)
+
+    const course = await prisma.course.update({
+      where: { id: courseId },
+      data: validatedData,
+      include: {
+        creator: { select: { id: true, name: true, image: true } },
+      },
+    })
+
+    await createAuditLog({
+      userId: session.user.id,
+      action: AuditActions.COURSE_UPDATE,
+      resource: 'course',
+      resourceId: course.id,
+      details: { changes: validatedData },
+    })
+
+    return NextResponse.json(course)
+  } catch (error) {
+    console.error('PATCH /api/courses/[courseId] error:', error)
+    if (error instanceof Error && error.name === 'ZodError') {
+      return NextResponse.json({ error: 'Données invalides', details: error }, { status: 400 })
+    }
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await getServerSession(authOptions)

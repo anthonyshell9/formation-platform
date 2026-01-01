@@ -85,14 +85,16 @@ export default function EditCoursePage() {
         const response = await fetch(`/api/courses/${courseId}`)
         if (!response.ok) throw new Error('Erreur de chargement')
         const data = await response.json()
-        setCourse(data)
-        setModules(data.modules || [])
+        // API returns { course, progress } - extract course
+        const courseData = data.course || data
+        setCourse(courseData)
+        setModules(courseData.modules || [])
         form.reset({
-          title: data.title,
-          description: data.description || '',
-          difficulty: data.difficulty || undefined,
-          category: data.category || '',
-          status: data.status,
+          title: courseData.title,
+          description: courseData.description || '',
+          difficulty: courseData.difficulty || undefined,
+          category: courseData.category || '',
+          status: courseData.status,
         })
       } catch (error) {
         toast.error('Erreur lors du chargement de la formation')
