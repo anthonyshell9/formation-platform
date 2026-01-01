@@ -85,8 +85,8 @@ jobs:
           package: deploy.zip
           startup-command: 'node server.js'
 
-      - name: Run database migrations
-        run: npx prisma migrate deploy
+      - name: Sync database schema
+        run: npx prisma db push --accept-data-loss
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
