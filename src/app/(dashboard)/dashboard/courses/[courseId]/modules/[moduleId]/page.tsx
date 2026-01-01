@@ -65,19 +65,39 @@ interface Module {
   lessons: Lesson[]
 }
 
-const contentTypes = [
-  { value: 'VIDEO', label: 'Vidéo', icon: Video, color: 'bg-red-100 text-red-700' },
-  { value: 'TEXT', label: 'Texte / Article', icon: FileText, color: 'bg-blue-100 text-blue-700' },
-  { value: 'PDF', label: 'Document PDF', icon: File, color: 'bg-orange-100 text-orange-700' },
-  { value: 'QUIZ', label: 'Quiz', icon: FileQuestion, color: 'bg-purple-100 text-purple-700' },
-  { value: 'EXTERNAL_LINK', label: 'Lien externe', icon: LinkIcon, color: 'bg-gray-100 text-gray-700' },
-  { value: 'DRAG_DROP', label: 'Glisser-Déposer', icon: Puzzle, color: 'bg-green-100 text-green-700' },
-  { value: 'MATCHING', label: 'Association', icon: ArrowRightLeft, color: 'bg-cyan-100 text-cyan-700' },
-  { value: 'FILL_BLANK', label: 'Texte à trous', icon: TextCursor, color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'HOTSPOT', label: 'Zones cliquables', icon: MousePointer, color: 'bg-pink-100 text-pink-700' },
-  { value: 'SORTING', label: 'Classement', icon: ArrowUpDown, color: 'bg-indigo-100 text-indigo-700' },
-  { value: 'FLASHCARDS', label: 'Flashcards', icon: Layers, color: 'bg-teal-100 text-teal-700' },
+const contentTypeCategories = [
+  {
+    name: 'Contenu principal',
+    description: 'Les formats de base pour presenter votre contenu',
+    types: [
+      { value: 'VIDEO', label: 'Video', icon: Video, color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300', description: 'Integrez des videos YouTube, Vimeo ou MP4' },
+      { value: 'TEXT', label: 'Texte / Article', icon: FileText, color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300', description: 'Redigez du contenu avec mise en forme Markdown' },
+      { value: 'PDF', label: 'Document PDF', icon: File, color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300', description: 'Affichez un document PDF integre' },
+      { value: 'EXTERNAL_LINK', label: 'Lien externe', icon: LinkIcon, color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300', description: 'Redirigez vers une ressource externe' },
+    ]
+  },
+  {
+    name: 'Exercices interactifs',
+    description: 'Engagez vos apprenants avec des activites pratiques',
+    types: [
+      { value: 'FLASHCARDS', label: 'Flashcards', icon: Layers, color: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300', description: 'Cartes memoire retournables (question/reponse)' },
+      { value: 'MATCHING', label: 'Association', icon: ArrowRightLeft, color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300', description: 'Reliez les elements correspondants' },
+      { value: 'DRAG_DROP', label: 'Glisser-Deposer', icon: Puzzle, color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300', description: 'Classez les elements dans les bonnes categories' },
+      { value: 'FILL_BLANK', label: 'Texte a trous', icon: TextCursor, color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300', description: 'Completez les mots manquants dans un texte' },
+      { value: 'SORTING', label: 'Classement', icon: ArrowUpDown, color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300', description: 'Ordonnez les elements dans le bon ordre' },
+    ]
+  },
+  {
+    name: 'Evaluation',
+    description: 'Testez les connaissances acquises',
+    types: [
+      { value: 'QUIZ', label: 'Quiz', icon: FileQuestion, color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300', description: 'Questions a choix multiples avec notation' },
+    ]
+  },
 ]
+
+// Flat list for backwards compatibility
+const contentTypes = contentTypeCategories.flatMap(cat => cat.types)
 
 export default function ModuleEditPage() {
   const router = useRouter()
@@ -274,50 +294,71 @@ export default function ModuleEditPage() {
                 Ajouter une leçon
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Nouvelle leçon</DialogTitle>
+                <DialogTitle>Nouvelle lecon</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <Label>Titre de la leçon</Label>
+                  <Label>Titre de la lecon</Label>
                   <Input
                     value={newLessonTitle}
                     onChange={(e) => setNewLessonTitle(e.target.value)}
-                    placeholder="Ex: Les fondamentaux de la sécurité"
+                    placeholder="Ex: Les fondamentaux de la securite"
+                    className="mt-1.5"
                   />
                 </div>
-                <div>
+
+                <div className="space-y-6">
                   <Label>Type de contenu</Label>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    {contentTypes.map((type) => {
-                      const Icon = type.icon
-                      return (
-                        <button
-                          key={type.value}
-                          type="button"
-                          onClick={() => setNewLessonType(type.value)}
-                          className={`p-3 rounded-lg border-2 transition-all text-left ${
-                            newLessonType === type.value
-                              ? 'border-primary bg-primary/5'
-                              : 'border-transparent bg-accent/50 hover:bg-accent'
-                          }`}
-                        >
-                          <div className={`inline-flex p-2 rounded-lg ${type.color} mb-2`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <p className="text-sm font-medium">{type.label}</p>
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {contentTypeCategories.map((category) => (
+                    <div key={category.name} className="space-y-3">
+                      <div>
+                        <h4 className="font-medium text-sm">{category.name}</h4>
+                        <p className="text-xs text-muted-foreground">{category.description}</p>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {category.types.map((type) => {
+                          const Icon = type.icon
+                          const isSelected = newLessonType === type.value
+                          return (
+                            <button
+                              key={type.value}
+                              type="button"
+                              onClick={() => setNewLessonType(type.value)}
+                              className={`p-4 rounded-xl border-2 transition-all text-left group ${
+                                isSelected
+                                  ? 'border-primary bg-primary/5 shadow-md'
+                                  : 'border-muted hover:border-muted-foreground/50 hover:shadow-sm'
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className={`p-2.5 rounded-lg ${type.color} shrink-0`}>
+                                  <Icon className="h-5 w-5" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
+                                    {type.label}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                    {type.description}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-end gap-2 pt-4">
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
                   <Button variant="outline" onClick={() => setIsAddingLesson(false)}>
                     Annuler
                   </Button>
                   <Button onClick={addLesson} disabled={!newLessonTitle || !newLessonType}>
-                    Créer la leçon
+                    Creer la lecon
                   </Button>
                 </div>
               </div>

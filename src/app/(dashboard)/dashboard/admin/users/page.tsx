@@ -696,23 +696,22 @@ export default function AdminUsersPage() {
                               <Key className="h-4 w-4 mr-2" />
                               {user.hasPassword ? 'Changer mot de passe' : 'Definir mot de passe'}
                             </DropdownMenuItem>
-                            {user.hasPassword && (
-                              <DropdownMenuItem
-                                onClick={() => handleToggleMfa(user.id, !user.mfaEnabled)}
-                              >
-                                {user.mfaEnabled ? (
-                                  <>
-                                    <ShieldOff className="h-4 w-4 mr-2" />
-                                    Desactiver MFA
-                                  </>
-                                ) : (
-                                  <>
-                                    <ShieldCheck className="h-4 w-4 mr-2" />
-                                    Activer MFA
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() => handleToggleMfa(user.id, !user.mfaEnabled)}
+                              disabled={!user.hasPassword}
+                            >
+                              {user.mfaEnabled ? (
+                                <>
+                                  <ShieldOff className="h-4 w-4 mr-2" />
+                                  Desactiver MFA
+                                </>
+                              ) : (
+                                <>
+                                  <ShieldCheck className="h-4 w-4 mr-2" />
+                                  Activer MFA
+                                </>
+                              )}
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => handleToggleActive(user.id, !user.isActive)}

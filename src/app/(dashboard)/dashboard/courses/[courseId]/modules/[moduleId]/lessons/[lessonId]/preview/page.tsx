@@ -3,23 +3,40 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
   Loader2,
   Video,
   FileText,
-  Code,
-  Image as ImageIcon,
-  ListChecks,
+  File,
   HelpCircle,
   Layers,
   BookOpen,
   Edit,
+  Link as LinkIcon,
+  Puzzle,
+  ArrowRightLeft,
+  TextCursor,
+  MousePointer,
+  ArrowUpDown,
+  ExternalLink,
+  CheckCircle2,
 } from 'lucide-react'
 import Link from 'next/link'
+import {
+  DragDropExercise,
+  MatchingExercise,
+  FillBlankExercise,
+  FlashcardsExercise,
+  SortingExercise,
+  VideoPlayer,
+  PDFViewer,
+  MarkdownContent,
+} from '@/components/lessons/interactive-content'
 
 interface LessonMedia {
   id: string
@@ -46,22 +63,19 @@ interface Lesson {
   }
 }
 
-const contentTypeIcons: Record<string, React.ReactNode> = {
-  VIDEO: <Video className="h-5 w-5" />,
-  TEXT: <FileText className="h-5 w-5" />,
-  INTERACTIVE: <Code className="h-5 w-5" />,
-  QUIZ: <HelpCircle className="h-5 w-5" />,
-  SLIDES: <Layers className="h-5 w-5" />,
-  DOCUMENT: <BookOpen className="h-5 w-5" />,
-}
-
-const contentTypeLabels: Record<string, string> = {
-  VIDEO: 'Video',
-  TEXT: 'Texte',
-  INTERACTIVE: 'Interactif',
-  QUIZ: 'Quiz',
-  SLIDES: 'Diaporama',
-  DOCUMENT: 'Document',
+const contentTypeConfig: Record<string, { icon: React.ElementType; label: string; color: string }> = {
+  VIDEO: { icon: Video, label: 'Video', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
+  TEXT: { icon: FileText, label: 'Texte', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
+  PDF: { icon: File, label: 'Document PDF', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' },
+  QUIZ: { icon: HelpCircle, label: 'Quiz', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' },
+  EXTERNAL_LINK: { icon: LinkIcon, label: 'Lien externe', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
+  DRAG_DROP: { icon: Puzzle, label: 'Glisser-Deposer', color: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' },
+  MATCHING: { icon: ArrowRightLeft, label: 'Association', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300' },
+  FILL_BLANK: { icon: TextCursor, label: 'Texte a trous', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' },
+  HOTSPOT: { icon: MousePointer, label: 'Zones cliquables', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300' },
+  SORTING: { icon: ArrowUpDown, label: 'Classement', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' },
+  FLASHCARDS: { icon: Layers, label: 'Flashcards', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300' },
+  DOCUMENT: { icon: BookOpen, label: 'Document', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
 }
 
 export default function LessonPreviewPage() {
@@ -72,6 +86,7 @@ export default function LessonPreviewPage() {
 
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
+  const [score, setScore] = useState<number | null>(null)
 
   useEffect(() => {
     async function fetchLesson() {
@@ -93,6 +108,15 @@ export default function LessonPreviewPage() {
     }
     fetchLesson()
   }, [courseId, moduleId, lessonId])
+
+  const handleExerciseComplete = (exerciseScore: number) => {
+    setScore(exerciseScore)
+    if (exerciseScore >= 70) {
+      toast.success(`Bravo ! Score: ${exerciseScore}%`)
+    } else {
+      toast.info(`Score: ${exerciseScore}%. Reessayez pour ameliorer !`)
+    }
+  }
 
   if (loading) {
     return (
@@ -116,6 +140,27 @@ export default function LessonPreviewPage() {
     )
   }
 
+  const typeConfig = contentTypeConfig[lesson.contentType] || contentTypeConfig.TEXT
+  const TypeIcon = typeConfig.icon
+
+  // Parse content for interactive types
+  interface ParsedContent {
+    zones?: { id: string; label: string }[]
+    items?: { id: string; text: string; zone: string; correctOrder?: number }[]
+    pairs?: { id: string; left: string; right: string }[]
+    text?: string
+    answers?: string[]
+    cards?: { id: string; front: string; back: string }[]
+  }
+  let parsedContent: ParsedContent = {}
+  if (lesson.content) {
+    try {
+      parsedContent = JSON.parse(lesson.content) as ParsedContent
+    } catch {
+      // Content is plain text
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
@@ -134,11 +179,11 @@ export default function LessonPreviewPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="flex items-center gap-1">
-            {contentTypeIcons[lesson.contentType]}
-            {contentTypeLabels[lesson.contentType] || lesson.contentType}
+          <Badge variant="outline" className={`flex items-center gap-1.5 ${typeConfig.color}`}>
+            <TypeIcon className="h-3.5 w-3.5" />
+            {typeConfig.label}
           </Badge>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" size="sm">
             <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
               <Edit className="mr-2 h-4 w-4" />
               Modifier
@@ -147,214 +192,168 @@ export default function LessonPreviewPage() {
         </div>
       </div>
 
+      {/* Score indicator for interactive content */}
+      {score !== null && (
+        <Card className={score >= 70 ? 'border-green-500' : 'border-yellow-500'}>
+          <CardContent className="py-4">
+            <div className="flex items-center gap-4">
+              <CheckCircle2 className={`h-8 w-8 ${score >= 70 ? 'text-green-500' : 'text-yellow-500'}`} />
+              <div className="flex-1">
+                <p className="font-medium">
+                  {score >= 70 ? 'Excellent travail !' : 'Continuez vos efforts !'}
+                </p>
+                <Progress value={score} className="mt-2" />
+              </div>
+              <div className="text-2xl font-bold">
+                {score}%
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Content */}
       <Card>
         <CardHeader>
-          <CardTitle>Apercu du contenu</CardTitle>
+          <CardTitle>Contenu de la lecon</CardTitle>
           {lesson.description && (
-            <p className="text-muted-foreground">{lesson.description}</p>
+            <CardDescription>{lesson.description}</CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Video */}
+          {/* VIDEO */}
           {lesson.contentType === 'VIDEO' && lesson.videoUrl && (
-            <div className="aspect-video rounded-lg overflow-hidden bg-black">
-              <video
-                src={lesson.videoUrl}
-                controls
-                className="w-full h-full"
-              />
+            <VideoPlayer url={lesson.videoUrl} />
+          )}
+
+          {/* TEXT */}
+          {lesson.contentType === 'TEXT' && lesson.content && (
+            <MarkdownContent content={lesson.content} />
+          )}
+
+          {/* PDF */}
+          {lesson.contentType === 'PDF' && lesson.videoUrl && (
+            <PDFViewer url={lesson.videoUrl} />
+          )}
+
+          {/* EXTERNAL LINK */}
+          {lesson.contentType === 'EXTERNAL_LINK' && lesson.videoUrl && (
+            <div className="space-y-4">
+              {lesson.content && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <MarkdownContent content={lesson.content} />
+                </div>
+              )}
+              <Button asChild size="lg" className="w-full">
+                <a href={lesson.videoUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-5 w-5" />
+                  Acceder a la ressource externe
+                </a>
+              </Button>
             </div>
           )}
 
-          {/* Text/Document Content */}
-          {(lesson.contentType === 'TEXT' || lesson.contentType === 'DOCUMENT') && lesson.content && (
-            <div className="prose dark:prose-invert max-w-none">
-              <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+          {/* DRAG & DROP */}
+          {lesson.contentType === 'DRAG_DROP' && parsedContent.zones && parsedContent.items && (
+            <DragDropExercise
+              zones={parsedContent.zones}
+              items={parsedContent.items as { id: string; text: string; zone: string }[]}
+              onComplete={handleExerciseComplete}
+            />
+          )}
+
+          {/* MATCHING */}
+          {lesson.contentType === 'MATCHING' && parsedContent.pairs && (
+            <MatchingExercise
+              pairs={parsedContent.pairs}
+              onComplete={handleExerciseComplete}
+            />
+          )}
+
+          {/* FILL IN THE BLANK */}
+          {lesson.contentType === 'FILL_BLANK' && parsedContent.text && parsedContent.answers && (
+            <FillBlankExercise
+              text={parsedContent.text}
+              answers={parsedContent.answers}
+              onComplete={handleExerciseComplete}
+            />
+          )}
+
+          {/* FLASHCARDS */}
+          {lesson.contentType === 'FLASHCARDS' && parsedContent.cards && (
+            <FlashcardsExercise
+              cards={parsedContent.cards}
+            />
+          )}
+
+          {/* SORTING */}
+          {lesson.contentType === 'SORTING' && parsedContent.items && (
+            <SortingExercise
+              items={parsedContent.items as { id: string; text: string; correctOrder: number }[]}
+              onComplete={handleExerciseComplete}
+            />
+          )}
+
+          {/* DOCUMENT */}
+          {lesson.contentType === 'DOCUMENT' && lesson.content && (
+            <div className="space-y-4">
+              <div className="p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-sm text-amber-800 dark:text-amber-200">
+                  Ce document necessite votre lecture et comprehension avant de continuer.
+                </p>
+              </div>
+              <MarkdownContent content={lesson.content} />
             </div>
           )}
 
-          {/* Interactive Content */}
-          {lesson.contentType === 'INTERACTIVE' && lesson.content && (
-            <InteractivePreview content={lesson.content} />
-          )}
-
-          {/* Slides */}
-          {lesson.contentType === 'SLIDES' && lesson.content && (
-            <SlidesPreview content={lesson.content} />
-          )}
-
-          {/* Quiz */}
-          {lesson.contentType === 'QUIZ' && lesson.content && (
-            <QuizPreview content={lesson.content} />
+          {/* HOTSPOT - Coming soon */}
+          {lesson.contentType === 'HOTSPOT' && (
+            <div className="text-center py-12">
+              <MousePointer className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">
+                Les zones cliquables seront bientot disponibles
+              </p>
+            </div>
           )}
 
           {/* Media attachments */}
           {lesson.media && lesson.media.length > 0 && (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-6 border-t">
               <h3 className="font-semibold">Fichiers attaches</h3>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {lesson.media.map((media) => (
-                  <div
+                  <a
                     key={media.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border"
+                    href={media.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"
                   >
-                    {media.type === 'image' ? (
-                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <FileText className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{media.filename}</p>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <a href={media.url} target="_blank" rel="noopener noreferrer">
-                        Voir
-                      </a>
-                    </Button>
-                  </div>
+                    <File className="h-5 w-5 text-muted-foreground" />
+                    <span className="flex-1 text-sm font-medium truncate">
+                      {media.filename}
+                    </span>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </a>
                 ))}
               </div>
             </div>
           )}
 
           {/* No content message */}
-          {!lesson.content && !lesson.videoUrl && lesson.media.length === 0 && (
+          {!lesson.content && !lesson.videoUrl && (!lesson.media || lesson.media.length === 0) && (
             <div className="text-center py-12 text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>Aucun contenu pour cette lecon</p>
+              <Button asChild className="mt-4" variant="outline">
+                <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`}>
+                  Ajouter du contenu
+                </Link>
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   )
-}
-
-// Interactive content preview
-function InteractivePreview({ content }: { content: string }) {
-  try {
-    const data = JSON.parse(content)
-
-    if (data.type === 'flashcards' && data.cards) {
-      return (
-        <div className="space-y-4">
-          <h3 className="font-semibold">Flashcards ({data.cards.length})</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            {data.cards.slice(0, 4).map((card: { front: string; back: string }, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <p className="font-medium mb-2">Q: {card.front}</p>
-                  <p className="text-muted-foreground">R: {card.back}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {data.cards.length > 4 && (
-            <p className="text-sm text-muted-foreground">
-              +{data.cards.length - 4} autres cartes...
-            </p>
-          )}
-        </div>
-      )
-    }
-
-    if (data.type === 'timeline' && data.events) {
-      return (
-        <div className="space-y-4">
-          <h3 className="font-semibold">Timeline ({data.events.length} evenements)</h3>
-          <div className="border-l-2 pl-4 space-y-4">
-            {data.events.map((event: { date: string; title: string; description?: string }, index: number) => (
-              <div key={index}>
-                <span className="text-sm font-medium text-primary">{event.date}</span>
-                <p className="font-medium">{event.title}</p>
-                {event.description && (
-                  <p className="text-sm text-muted-foreground">{event.description}</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
-
-    return (
-      <div className="p-4 bg-muted rounded-lg">
-        <pre className="text-sm overflow-auto">{JSON.stringify(data, null, 2)}</pre>
-      </div>
-    )
-  } catch {
-    return (
-      <div className="prose dark:prose-invert max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: content }} />
-      </div>
-    )
-  }
-}
-
-// Slides preview
-function SlidesPreview({ content }: { content: string }) {
-  try {
-    const data = JSON.parse(content)
-    if (data.slides) {
-      return (
-        <div className="space-y-4">
-          <h3 className="font-semibold">Diaporama ({data.slides.length} slides)</h3>
-          <div className="grid gap-4 md:grid-cols-3">
-            {data.slides.slice(0, 6).map((slide: { title: string; content?: string }, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <p className="font-medium text-sm">Slide {index + 1}</p>
-                  <p className="text-xs text-muted-foreground truncate">{slide.title}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )
-    }
-    return null
-  } catch {
-    return null
-  }
-}
-
-// Quiz preview
-function QuizPreview({ content }: { content: string }) {
-  try {
-    const data = JSON.parse(content)
-    if (data.questions) {
-      return (
-        <div className="space-y-4">
-          <h3 className="font-semibold">Quiz ({data.questions.length} questions)</h3>
-          <div className="space-y-4">
-            {data.questions.slice(0, 3).map((q: { question: string; options?: string[] }, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-4">
-                  <p className="font-medium">Q{index + 1}: {q.question}</p>
-                  {q.options && (
-                    <ul className="mt-2 space-y-1">
-                      {q.options.map((opt: string, i: number) => (
-                        <li key={i} className="text-sm text-muted-foreground">
-                          {String.fromCharCode(65 + i)}. {opt}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {data.questions.length > 3 && (
-            <p className="text-sm text-muted-foreground">
-              +{data.questions.length - 3} autres questions...
-            </p>
-          )}
-        </div>
-      )
-    }
-    return null
-  } catch {
-    return null
-  }
 }
