@@ -1,47 +1,228 @@
-import { getSession } from '@/lib/auth/session'
-import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma/client'
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, BookOpen, Users, Clock, Edit, Eye } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import {
+  Plus,
+  BookOpen,
+  Users,
+  Clock,
+  Edit,
+  Eye,
+  Trash2,
+  MoreVertical,
+  CalendarPlus,
+  Loader2,
+} from 'lucide-react'
 import Link from 'next/link'
-import { Role, CourseStatus } from '@prisma/client'
+import { toast } from 'sonner'
+import { format } from 'date-fns'
 
-export default async function AdminCoursesPage() {
-  const session = await getSession()
-  if (!session?.user) redirect('/auth/signin')
+interface Course {
+  id: string
+  title: string
+  description: string | null
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  difficulty: string | null
+  duration: number | null
+  modules: { id: string }[]
+  _count: { enrollments: number }
+  creator: { id: string; name: string | null }
+}
 
-  if (!([Role.ADMIN, Role.TRAINER] as Role[]).includes(session.user.role)) {
-    redirect('/dashboard')
+interface Group {
+  id: string
+  name: string
+  color: string
+}
+
+interface User {
+  id: string
+  name: string | null
+  email: string
+}
+
+export default function AdminCoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([])
+  const [groups, setGroups] = useState<Group[]>([])
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isAssigning, setIsAssigning] = useState(false)
+
+  // Assignment form state
+  const [assignType, setAssignType] = useState<'group' | 'user'>('group')
+  const [selectedGroupId, setSelectedGroupId] = useState('')
+  const [selectedUserId, setSelectedUserId] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [mandatory, setMandatory] = useState(false)
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  async function fetchData() {
+    try {
+      const [coursesRes, groupsRes, usersRes] = await Promise.all([
+        fetch('/api/courses'),
+        fetch('/api/admin/groups'),
+        fetch('/api/admin/users'),
+      ])
+
+      if (coursesRes.ok) {
+        const data = await coursesRes.json()
+        setCourses(data.courses || data)
+      }
+      if (groupsRes.ok) {
+        const data = await groupsRes.json()
+        setGroups(data.groups || data)
+      }
+      if (usersRes.ok) {
+        const data = await usersRes.json()
+        setUsers(data.users || data)
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const courses = await prisma.course.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: {
-      creator: { select: { id: true, name: true, image: true } },
-      modules: { select: { id: true } },
-      _count: { select: { enrollments: true } },
-    },
-  })
+  async function handleDelete() {
+    if (!selectedCourse) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/courses/${selectedCourse.id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setCourses(courses.filter(c => c.id !== selectedCourse.id))
+        toast.success('Formation supprimee avec succes')
+        setDeleteDialogOpen(false)
+        setSelectedCourse(null)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erreur lors de la suppression')
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la suppression')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  async function handleAssign() {
+    if (!selectedCourse) return
+    if (!startDate) {
+      toast.error('La date de debut est obligatoire')
+      return
+    }
+    if (assignType === 'group' && !selectedGroupId) {
+      toast.error('Veuillez selectionner un groupe')
+      return
+    }
+    if (assignType === 'user' && !selectedUserId) {
+      toast.error('Veuillez selectionner un utilisateur')
+      return
+    }
+
+    setIsAssigning(true)
+    try {
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: selectedCourse.id,
+          groupId: assignType === 'group' ? selectedGroupId : null,
+          userId: assignType === 'user' ? selectedUserId : null,
+          startDate: new Date(startDate).toISOString(),
+          endDate: endDate ? new Date(endDate).toISOString() : null,
+          mandatory,
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('Formation attribuee avec succes')
+        setAssignDialogOpen(false)
+        resetAssignForm()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erreur lors de l\'attribution')
+      }
+    } catch (error) {
+      toast.error('Erreur lors de l\'attribution')
+    } finally {
+      setIsAssigning(false)
+    }
+  }
+
+  function resetAssignForm() {
+    setSelectedCourse(null)
+    setAssignType('group')
+    setSelectedGroupId('')
+    setSelectedUserId('')
+    setStartDate('')
+    setEndDate('')
+    setMandatory(false)
+  }
 
   const stats = {
     total: courses.length,
-    published: courses.filter(c => c.status === CourseStatus.PUBLISHED).length,
-    draft: courses.filter(c => c.status === CourseStatus.DRAFT).length,
-    archived: courses.filter(c => c.status === CourseStatus.ARCHIVED).length,
+    published: courses.filter(c => c.status === 'PUBLISHED').length,
+    draft: courses.filter(c => c.status === 'DRAFT').length,
+    archived: courses.filter(c => c.status === 'ARCHIVED').length,
   }
 
-  const statusColors: Record<CourseStatus, string> = {
+  const statusColors: Record<string, string> = {
     DRAFT: 'bg-yellow-500',
     PUBLISHED: 'bg-green-500',
     ARCHIVED: 'bg-gray-500',
   }
 
-  const statusLabels: Record<CourseStatus, string> = {
+  const statusLabels: Record<string, string> = {
     DRAFT: 'Brouillon',
     PUBLISHED: 'Publiee',
     ARCHIVED: 'Archivee',
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -120,9 +301,47 @@ export default async function AdminCoursesPage() {
                   <Badge className={`${statusColors[course.status]} text-white`}>
                     {statusLabels[course.status]}
                   </Badge>
-                  {course.difficulty && (
-                    <Badge variant="outline">{course.difficulty}</Badge>
-                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/courses/${course.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Voir
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/dashboard/courses/${course.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Modifier
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedCourse(course)
+                          setAssignDialogOpen(true)
+                        }}
+                      >
+                        <CalendarPlus className="mr-2 h-4 w-4" />
+                        Attribuer
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => {
+                          setSelectedCourse(course)
+                          setDeleteDialogOpen(true)
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Supprimer
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <CardTitle className="line-clamp-2 mt-2">{course.title}</CardTitle>
                 {course.description && (
@@ -167,6 +386,144 @@ export default async function AdminCoursesPage() {
           ))
         )}
       </div>
+
+      {/* Delete Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer la formation</DialogTitle>
+            <DialogDescription>
+              Etes-vous sur de vouloir supprimer la formation &quot;{selectedCourse?.title}&quot;?
+              Cette action est irreversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={(open) => {
+        setAssignDialogOpen(open)
+        if (!open) resetAssignForm()
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attribuer la formation</DialogTitle>
+            <DialogDescription>
+              Attribuez &quot;{selectedCourse?.title}&quot; a un groupe ou un utilisateur.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Attribuer a</Label>
+              <Select value={assignType} onValueChange={(v) => setAssignType(v as 'group' | 'user')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="group">Un groupe</SelectItem>
+                  <SelectItem value="user">Un utilisateur</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {assignType === 'group' ? (
+              <div>
+                <Label>Groupe</Label>
+                <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selectionner un groupe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map(group => (
+                      <SelectItem key={group.id} value={group.id}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: group.color }}
+                          />
+                          {group.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div>
+                <Label>Utilisateur</Label>
+                <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selectionner un utilisateur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name || user.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Date de debut *</Label>
+                <Input
+                  type="datetime-local"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Date de fin</Label>
+                <Input
+                  type="datetime-local"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="mandatory"
+                checked={mandatory}
+                onChange={(e) => setMandatory(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <Label htmlFor="mandatory" className="font-normal">
+                Formation obligatoire
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={handleAssign} disabled={isAssigning}>
+              {isAssigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Attribuer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

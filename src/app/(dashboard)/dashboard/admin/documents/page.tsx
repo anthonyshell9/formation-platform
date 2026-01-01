@@ -4,7 +4,18 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -28,6 +39,8 @@ import {
   Clock,
   Users,
   FileCheck,
+  Plus,
+  Loader2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -59,8 +72,11 @@ interface DocumentAck {
 interface DocumentLesson {
   id: string
   title: string
+  description: string | null
   requiresAck: boolean
+  videoUrl: string | null
   module: {
+    id: string
     title: string
     course: {
       id: string
@@ -72,6 +88,15 @@ interface DocumentLesson {
   }
 }
 
+interface Course {
+  id: string
+  title: string
+  modules: {
+    id: string
+    title: string
+  }[]
+}
+
 interface Stats {
   totalDocuments: number
   totalAcknowledgments: number
@@ -81,6 +106,7 @@ interface Stats {
 export default function AdminDocumentsPage() {
   const [documents, setDocuments] = useState<DocumentLesson[]>([])
   const [acknowledgments, setAcknowledgments] = useState<DocumentAck[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
   const [stats, setStats] = useState<Stats>({
     totalDocuments: 0,
     totalAcknowledgments: 0,
@@ -89,8 +115,19 @@ export default function AdminDocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [courseFilter, setCourseFilter] = useState('ALL')
-  const [courses, setCourses] = useState<{ id: string; title: string }[]>([])
   const [view, setView] = useState<'documents' | 'acknowledgments'>('documents')
+
+  // Create document state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newDocument, setNewDocument] = useState({
+    title: '',
+    description: '',
+    courseId: '',
+    moduleId: '',
+    requiresAck: true,
+    fileUrl: '',
+  })
 
   useEffect(() => {
     fetchData()
@@ -98,31 +135,31 @@ export default function AdminDocumentsPage() {
 
   async function fetchData() {
     try {
-      const [docsRes, acksRes] = await Promise.all([
+      const [docsRes, acksRes, coursesRes] = await Promise.all([
         fetch('/api/admin/documents'),
         fetch('/api/admin/documents/acknowledgments'),
+        fetch('/api/courses'),
       ])
 
       if (docsRes.ok) {
         const data = await docsRes.json()
         setDocuments(data.documents)
         setStats(data.stats)
-
-        // Extract unique courses
-        const uniqueCourses = Array.from(
-          new Map(
-            data.documents.map((d: DocumentLesson) => [
-              d.module.course.id,
-              { id: d.module.course.id, title: d.module.course.title },
-            ])
-          ).values()
-        )
-        setCourses(uniqueCourses as { id: string; title: string }[])
       }
 
       if (acksRes.ok) {
         const data = await acksRes.json()
         setAcknowledgments(data.acknowledgments)
+      }
+
+      if (coursesRes.ok) {
+        const data = await coursesRes.json()
+        const coursesData = data.courses || data
+        setCourses(coursesData.map((c: Course & { modules?: { id: string; title: string }[] }) => ({
+          id: c.id,
+          title: c.title,
+          modules: c.modules || [],
+        })))
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -131,6 +168,55 @@ export default function AdminDocumentsPage() {
       setLoading(false)
     }
   }
+
+  async function handleCreateDocument() {
+    if (!newDocument.title || !newDocument.courseId || !newDocument.moduleId) {
+      toast.error('Veuillez remplir tous les champs obligatoires')
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const response = await fetch(
+        `/api/courses/${newDocument.courseId}/modules/${newDocument.moduleId}/lessons`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: newDocument.title,
+            description: newDocument.description,
+            contentType: 'DOCUMENT',
+            videoUrl: newDocument.fileUrl || null,
+            requiresAck: newDocument.requiresAck,
+            order: 999,
+          }),
+        }
+      )
+
+      if (response.ok) {
+        toast.success('Document cree avec succes')
+        setCreateDialogOpen(false)
+        setNewDocument({
+          title: '',
+          description: '',
+          courseId: '',
+          moduleId: '',
+          requiresAck: true,
+          fileUrl: '',
+        })
+        fetchData()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erreur lors de la creation')
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la creation')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const selectedCourse = courses.find(c => c.id === newDocument.courseId)
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch =
@@ -148,6 +234,16 @@ export default function AdminDocumentsPage() {
     const matchesCourse = courseFilter === 'ALL' || ack.lesson.module.course.id === courseFilter
     return matchesSearch && matchesCourse
   })
+
+  // Extract unique courses from documents for filter
+  const uniqueCourses = Array.from(
+    new Map(
+      documents.map((d) => [
+        d.module.course.id,
+        { id: d.module.course.id, title: d.module.course.title },
+      ])
+    ).values()
+  )
 
   function exportToCSV() {
     const headers = ['Date', 'Utilisateur', 'Email', 'Document', 'Formation', 'IP', 'Signature Hash']
@@ -172,6 +268,14 @@ export default function AdminDocumentsPage() {
     link.click()
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -181,10 +285,16 @@ export default function AdminDocumentsPage() {
             Gestion des documents et suivi des prises en compte
           </p>
         </div>
-        <Button onClick={exportToCSV}>
-          <Download className="h-4 w-4 mr-2" />
-          Exporter audit
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportToCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Exporter audit
+          </Button>
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Nouveau document
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -254,7 +364,7 @@ export default function AdminDocumentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Toutes les formations</SelectItem>
-                  {courses.map(course => (
+                  {uniqueCourses.map(course => (
                     <SelectItem key={course.id} value={course.id}>
                       {course.title}
                     </SelectItem>
@@ -271,28 +381,34 @@ export default function AdminDocumentsPage() {
                 <TableRow>
                   <TableHead>Document</TableHead>
                   <TableHead>Formation</TableHead>
-                  <TableHead>Chapitre</TableHead>
+                  <TableHead>Module</TableHead>
                   <TableHead>Signatures</TableHead>
                   <TableHead>Statut</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {filteredDocuments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      Chargement...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredDocuments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      Aucun document
+                      <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Aucun document</p>
+                      <Button className="mt-4" onClick={() => setCreateDialogOpen(true)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Creer un document
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredDocuments.map(doc => (
                     <TableRow key={doc.id}>
-                      <TableCell className="font-medium">{doc.title}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{doc.title}</p>
+                          {doc.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-1">{doc.description}</p>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell>{doc.module.course.title}</TableCell>
                       <TableCell>{doc.module.title}</TableCell>
                       <TableCell>
@@ -325,16 +441,11 @@ export default function AdminDocumentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? (
+                {filteredAcks.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8">
-                      Chargement...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredAcks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
-                      Aucune signature
+                      <CheckCircle2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">Aucune signature</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -369,6 +480,123 @@ export default function AdminDocumentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Document Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nouveau document</DialogTitle>
+            <DialogDescription>
+              Creez un document qui sera affiche aux apprenants pour prise en compte.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Titre *</Label>
+              <Input
+                value={newDocument.title}
+                onChange={(e) => setNewDocument({ ...newDocument, title: e.target.value })}
+                placeholder="Politique de securite informatique"
+              />
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={newDocument.description}
+                onChange={(e) => setNewDocument({ ...newDocument, description: e.target.value })}
+                placeholder="Description du document..."
+                rows={3}
+              />
+            </div>
+
+            <div>
+              <Label>Formation *</Label>
+              <Select
+                value={newDocument.courseId}
+                onValueChange={(v) => setNewDocument({ ...newDocument, courseId: v, moduleId: '' })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selectionner une formation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {courses.map(course => (
+                    <SelectItem key={course.id} value={course.id}>
+                      {course.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedCourse && selectedCourse.modules.length > 0 && (
+              <div>
+                <Label>Module *</Label>
+                <Select
+                  value={newDocument.moduleId}
+                  onValueChange={(v) => setNewDocument({ ...newDocument, moduleId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selectionner un module" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedCourse.modules.map(module => (
+                      <SelectItem key={module.id} value={module.id}>
+                        {module.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {selectedCourse && selectedCourse.modules.length === 0 && (
+              <p className="text-sm text-yellow-600">
+                Cette formation n&apos;a pas encore de modules. Creez d&apos;abord un module dans la formation.
+              </p>
+            )}
+
+            <div>
+              <Label>URL du fichier (PDF, etc.)</Label>
+              <Input
+                value={newDocument.fileUrl}
+                onChange={(e) => setNewDocument({ ...newDocument, fileUrl: e.target.value })}
+                placeholder="https://example.com/document.pdf"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Lien vers le fichier a telecharger
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="requiresAck"
+                checked={newDocument.requiresAck}
+                onCheckedChange={(checked) =>
+                  setNewDocument({ ...newDocument, requiresAck: checked === true })
+                }
+              />
+              <Label htmlFor="requiresAck" className="font-normal">
+                Signature requise (pour audit)
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleCreateDocument}
+              disabled={isCreating || !newDocument.title || !newDocument.courseId || !newDocument.moduleId}
+            >
+              {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Creer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
