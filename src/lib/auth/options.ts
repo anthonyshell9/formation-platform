@@ -33,24 +33,34 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email et mot de passe requis')
         }
 
+        console.log('[AUTH] Attempting login for:', credentials.email)
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.toLowerCase().trim() },
         })
 
         if (!user) {
+          console.log('[AUTH] User not found:', credentials.email)
           throw new Error('Utilisateur non trouve')
         }
 
+        console.log('[AUTH] User found:', { id: user.id, email: user.email, hasPassword: !!user.password, isActive: user.isActive })
+
         if (!user.isActive) {
+          console.log('[AUTH] User inactive:', user.email)
           throw new Error('Compte desactive')
         }
 
         if (!user.password) {
+          console.log('[AUTH] User has no password (SSO only):', user.email)
           throw new Error('Veuillez utiliser la connexion Microsoft')
         }
 
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+        console.log('[AUTH] Password validation result:', isPasswordValid)
+
         if (!isPasswordValid) {
+          console.log('[AUTH] Invalid password for:', user.email)
           throw new Error('Mot de passe incorrect')
         }
 
