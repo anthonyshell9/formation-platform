@@ -1,17 +1,30 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth/options'
+import { getSession } from '@/lib/auth/session'
 import { prisma } from '@/lib/prisma/client'
 
 // Debug endpoint to check session info
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    // Check both methods to find discrepancy
+    const sessionFromNextAuth = await getServerSession(authOptions)
+    const sessionFromHelper = await getSession()
+
+    // Check if SKIP_AUTH is set
+    const skipAuth = process.env.SKIP_AUTH === 'true'
+
+    const session = sessionFromNextAuth
 
     if (!session?.user) {
       return NextResponse.json({
         authenticated: false,
-        message: 'No session found'
+        message: 'No session found',
+        skipAuth,
+        sessionFromHelper: sessionFromHelper ? {
+          userId: sessionFromHelper.user?.id,
+          role: sessionFromHelper.user?.role,
+        } : null,
       })
     }
 
@@ -29,12 +42,26 @@ export async function GET() {
 
     return NextResponse.json({
       authenticated: true,
-      session: {
+      skipAuth,
+      sessionFromNextAuth: {
         userId: session.user.id,
         email: session.user.email,
         name: session.user.name,
         role: session.user.role,
         image: session.user.image,
+      },
+      sessionFromHelper: sessionFromHelper ? {
+        userId: sessionFromHelper.user?.id,
+        email: sessionFromHelper.user?.email,
+        name: sessionFromHelper.user?.name,
+        role: sessionFromHelper.user?.role,
+      } : null,
+      helperVsNextAuth: {
+        sameUser: session.user.id === sessionFromHelper?.user?.id,
+        sameRole: session.user.role === sessionFromHelper?.user?.role,
+        discrepancy: session.user.role !== sessionFromHelper?.user?.role
+          ? `NextAuth: ${session.user.role}, Helper: ${sessionFromHelper?.user?.role}`
+          : null,
       },
       database: {
         foundById: !!userById,

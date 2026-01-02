@@ -4,6 +4,9 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { Role } from '@prisma/client'
 
+// Force dynamic rendering to prevent caching of user role
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardLayout({
   children,
 }: {
