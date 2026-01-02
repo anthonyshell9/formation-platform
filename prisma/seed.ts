@@ -330,7 +330,7 @@ Le phishing (hameçonnage) est une technique utilisée par les cybercriminels po
   // Create badges
   await prisma.badge.upsert({
     where: { id: 'badge-first-course' },
-    update: {},
+    update: { isActive: true },
     create: {
       id: 'badge-first-course',
       name: 'Première formation',
@@ -338,12 +338,13 @@ Le phishing (hameçonnage) est une technique utilisée par les cybercriminels po
       imageUrl: '/badges/first-course.svg',
       points: 10,
       category: 'Progression',
+      isActive: true,
     },
   })
 
   await prisma.badge.upsert({
     where: { id: 'badge-quiz-master' },
-    update: {},
+    update: { isActive: true },
     create: {
       id: 'badge-quiz-master',
       name: 'Maître des quiz',
@@ -351,12 +352,13 @@ Le phishing (hameçonnage) est une technique utilisée par les cybercriminels po
       imageUrl: '/badges/quiz-master.svg',
       points: 50,
       category: 'Quiz',
+      isActive: true,
     },
   })
 
   await prisma.badge.upsert({
     where: { id: 'badge-cyber-aware' },
-    update: {},
+    update: { isActive: true },
     create: {
       id: 'badge-cyber-aware',
       name: 'Cyber-conscient',
@@ -364,6 +366,50 @@ Le phishing (hameçonnage) est une technique utilisée par les cybercriminels po
       imageUrl: '/badges/cyber-aware.svg',
       points: 100,
       category: 'Cybersécurité',
+      isActive: true,
+    },
+  })
+
+  // More default badges for common achievements
+  await prisma.badge.upsert({
+    where: { id: 'badge-perfect-score' },
+    update: { isActive: true },
+    create: {
+      id: 'badge-perfect-score',
+      name: 'Score parfait',
+      description: 'Obtenir 100% à un quiz',
+      imageUrl: '/badges/perfect-score.svg',
+      points: 25,
+      category: 'Quiz',
+      isActive: true,
+    },
+  })
+
+  await prisma.badge.upsert({
+    where: { id: 'badge-fast-learner' },
+    update: { isActive: true },
+    create: {
+      id: 'badge-fast-learner',
+      name: 'Apprenant rapide',
+      description: 'Terminer une formation en moins de 24h',
+      imageUrl: '/badges/fast-learner.svg',
+      points: 30,
+      category: 'Progression',
+      isActive: true,
+    },
+  })
+
+  await prisma.badge.upsert({
+    where: { id: 'badge-dedication' },
+    update: { isActive: true },
+    create: {
+      id: 'badge-dedication',
+      name: 'Dédication',
+      description: 'Se connecter 7 jours consécutifs',
+      imageUrl: '/badges/dedication.svg',
+      points: 20,
+      category: 'Engagement',
+      isActive: true,
     },
   })
 
