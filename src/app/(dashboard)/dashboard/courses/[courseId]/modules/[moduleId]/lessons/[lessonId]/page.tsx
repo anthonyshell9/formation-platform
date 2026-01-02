@@ -19,7 +19,12 @@ import {
   GripVertical,
   Image as ImageIcon,
   Eye,
+  Upload,
+  FileText,
+  X,
+  CheckCircle2,
 } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
 import Link from 'next/link'
 
 interface LessonMedia {
@@ -109,6 +114,12 @@ export default function LessonEditorPage() {
   const [flashcards, setFlashcards] = useState<FlashCard[]>([])
   const [sortingItems, setSortingItems] = useState<SortingItem[]>([])
 
+  // File upload state
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+
   useEffect(() => {
     loadLesson()
   }, [lessonId])
@@ -124,6 +135,17 @@ export default function LessonEditorPage() {
       setTitle(data.title)
       setDescription(data.description || '')
       setVideoUrl(data.videoUrl || '')
+
+      // Extract filename from URL for PDF
+      if (data.contentType === 'PDF' && data.videoUrl) {
+        try {
+          const url = new URL(data.videoUrl)
+          const filename = decodeURIComponent(url.pathname.split('/').pop() || 'document.pdf')
+          setUploadedFileName(filename)
+        } catch {
+          setUploadedFileName('Document PDF')
+        }
+      }
 
       // Parse content based on type
       if (data.content) {
@@ -238,6 +260,91 @@ export default function LessonEditorPage() {
       text: '',
       correctOrder: sortingItems.length + 1
     }])
+  }
+
+  // File upload handler
+  const handleFileUpload = async (file: File, type: 'documents' | 'videos' | 'images' = 'documents') => {
+    if (!file) return
+
+    // Validate file type for PDF
+    if (type === 'documents' && !file.type.includes('pdf')) {
+      toast.error('Seuls les fichiers PDF sont acceptes')
+      return
+    }
+
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    // Simulate progress while uploading
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => Math.min(prev + 10, 90))
+    }, 200)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', type)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      clearInterval(progressInterval)
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur upload')
+      }
+
+      const data = await response.json()
+      setUploadProgress(100)
+      setVideoUrl(data.url)
+      setUploadedFileName(data.filename)
+      toast.success('Fichier uploade avec succes')
+
+      // Reset progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(0)
+        setIsUploading(false)
+      }, 500)
+    } catch (error) {
+      clearInterval(progressInterval)
+      setUploadProgress(0)
+      setIsUploading(false)
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de l\'upload')
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent, type: 'documents' | 'videos' | 'images' = 'documents') => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files[0]
+    if (file) {
+      handleFileUpload(file, type)
+    }
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'documents' | 'videos' | 'images' = 'documents') => {
+    const file = e.target.files?.[0]
+    if (file) {
+      handleFileUpload(file, type)
+    }
+  }
+
+  const removeUploadedFile = () => {
+    setVideoUrl('')
+    setUploadedFileName(null)
   }
 
   if (isLoading) {
@@ -646,20 +753,114 @@ export default function LessonEditorPage() {
           {/* PDF */}
           {lesson.contentType === 'PDF' && (
             <div className="space-y-4">
-              <div>
-                <Label>URL du PDF</Label>
-                <Input
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="https://example.com/document.pdf"
-                />
-              </div>
-              {videoUrl && (
-                <iframe
-                  src={videoUrl}
-                  className="w-full h-[600px] border rounded-lg"
-                />
+              {/* File already uploaded */}
+              {videoUrl ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-green-800 dark:text-green-200">
+                          {uploadedFileName || 'Document PDF'}
+                        </p>
+                        <p className="text-sm text-green-600 dark:text-green-400">
+                          Fichier uploade avec succes
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={removeUploadedFile}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Supprimer
+                    </Button>
+                  </div>
+                  <iframe
+                    src={videoUrl}
+                    className="w-full h-[500px] border rounded-lg"
+                    title="Apercu PDF"
+                  />
+                </div>
+              ) : (
+                /* Upload zone */
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, 'documents')}
+                  className={`
+                    relative border-2 border-dashed rounded-xl p-8 text-center transition-all
+                    ${isDragging
+                      ? 'border-primary bg-primary/5 scale-[1.02]'
+                      : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                    }
+                    ${isUploading ? 'pointer-events-none opacity-75' : 'cursor-pointer'}
+                  `}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => handleFileSelect(e, 'documents')}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={isUploading}
+                  />
+
+                  {isUploading ? (
+                    <div className="space-y-4">
+                      <Loader2 className="h-12 w-12 mx-auto text-primary animate-spin" />
+                      <div className="max-w-xs mx-auto">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Upload en cours... {uploadProgress}%
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Upload className="h-8 w-8 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-lg font-medium">
+                          Glissez votre PDF ici
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          ou cliquez pour selectionner un fichier
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                        <FileText className="h-4 w-4" />
+                        <span>Format accepte: PDF (max 500 MB)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
+
+              {/* Alternative: URL input */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    ou entrez une URL
+                  </span>
+                </div>
+              </div>
+              <Input
+                value={videoUrl}
+                onChange={(e) => {
+                  setVideoUrl(e.target.value)
+                  setUploadedFileName(null)
+                }}
+                placeholder="https://example.com/document.pdf"
+                disabled={isUploading}
+              />
             </div>
           )}
 
