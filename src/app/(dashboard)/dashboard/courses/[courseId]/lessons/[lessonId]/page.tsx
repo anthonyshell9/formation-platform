@@ -120,7 +120,7 @@ export default async function LessonPage({ params }: Props) {
   if (!lessonProgress) {
     await prisma.lessonProgress.create({
       data: {
-        progressId: courseProgress.id,
+        courseProgressId: courseProgress.id,
         lessonId,
         completed: false,
       },
@@ -342,14 +342,14 @@ export default async function LessonPage({ params }: Props) {
             if (progress) {
               await prisma.lessonProgress.upsert({
                 where: {
-                  progressId_lessonId: {
-                    progressId: progress.id,
+                  courseProgressId_lessonId: {
+                    courseProgressId: progress.id,
                     lessonId,
                   },
                 },
                 update: { completed: true, completedAt: new Date() },
                 create: {
-                  progressId: progress.id,
+                  courseProgressId: progress.id,
                   lessonId,
                   completed: true,
                   completedAt: new Date(),
@@ -362,7 +362,7 @@ export default async function LessonPage({ params }: Props) {
               })
               const completedLessons = await prisma.lessonProgress.count({
                 where: {
-                  progressId: progress.id,
+                  courseProgressId: progress.id,
                   completed: true,
                 },
               })
