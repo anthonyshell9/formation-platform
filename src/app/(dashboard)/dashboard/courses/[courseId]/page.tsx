@@ -195,6 +195,14 @@ export default async function CourseDetailPage({ params }: Props) {
               </span>
             </div>
             <Progress value={progress?.progressPercent || 0} className="h-3" />
+            {course.modules.length > 0 && course.modules[0].lessons.length > 0 && (
+              <Button asChild className="mt-4 w-full">
+                <Link href={`/dashboard/courses/${courseId}/lessons/${course.modules[0].lessons[0].id}`}>
+                  <Play className="mr-2 h-4 w-4" />
+                  {(progress?.progressPercent || 0) > 0 ? 'Continuer la formation' : 'Commencer la formation'}
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

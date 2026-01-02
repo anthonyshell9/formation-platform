@@ -61,11 +61,16 @@ export function Sidebar({ userRole }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const t = useTranslations('nav')
 
-  const isAdmin = ([Role.ADMIN, Role.TRAINER, Role.MANAGER] as Role[]).includes(userRole)
+  // Debug log for role checking
+  console.log('[Sidebar] userRole received:', userRole)
 
-  const filteredAdminItems = adminItems.filter(
+  // Only show admin section for non-LEARNER roles
+  const isAdmin = userRole && userRole !== Role.LEARNER &&
+    ([Role.ADMIN, Role.TRAINER, Role.MANAGER] as Role[]).includes(userRole)
+
+  const filteredAdminItems = isAdmin ? adminItems.filter(
     item => !item.roles || item.roles.includes(userRole)
-  )
+  ) : []
 
   return (
     <aside
