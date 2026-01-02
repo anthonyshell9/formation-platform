@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         where: {
           enrollments: {
             some: {
-              updatedAt: { gte: startDate },
+              enrolledAt: { gte: startDate },
             },
           },
         },
