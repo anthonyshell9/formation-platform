@@ -168,6 +168,8 @@ model Course {
   progress    CourseProgress[]
   assignments CourseAssignment[]
   certificates Certificate[]
+  badges      CourseBadge[]
+  certificateTemplate CertificateTemplate?
 
   @@map("courses")
 }
@@ -424,26 +426,57 @@ model DocumentAcknowledgment {
 
 // ============== BADGES & CERTIFICATES ==============
 
+enum BadgeTrigger {
+  COURSE_COMPLETION      // When user completes a specific course
+  QUIZ_PASS              // When user passes a quiz with min score
+  COURSES_COUNT          // When user completes X courses
+  QUIZZES_COUNT          // When user passes X quizzes
+  CATEGORY_COMPLETION    // When user completes all courses in category
+  PERFECT_QUIZ           // 100% score on a quiz
+  STREAK                 // X consecutive days of activity
+  MANUAL                 // Manually awarded by admin
+}
+
 model Badge {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   name        String
   description String?
   imageUrl    String
-  criteria    String   @db.Text // JSON describing how to earn
-  points      Int      @default(0)
+  points      Int          @default(0)
   category    String?
-  createdAt   DateTime @default(now())
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  users UserBadge[]
+  users        UserBadge[]
+  courseBadges CourseBadge[]
 
   @@map("badges")
+}
+
+// Link badge to course with specific trigger conditions
+model CourseBadge {
+  id          String       @id @default(cuid())
+  courseId    String
+  badgeId     String
+  trigger     BadgeTrigger @default(COURSE_COMPLETION)
+  minScore    Int?         // For QUIZ_PASS trigger (percentage)
+  createdAt   DateTime     @default(now())
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  badge  Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, badgeId])
+  @@map("course_badges")
 }
 
 model UserBadge {
   id        String   @id @default(cuid())
   userId    String
   badgeId   String
+  courseId  String?  // Optional: which course triggered this badge
   earnedAt  DateTime @default(now())
+  metadata  Json?    // Extra info about how it was earned
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
@@ -452,14 +485,42 @@ model UserBadge {
   @@map("user_badges")
 }
 
+// Certificate template for a course
+model CertificateTemplate {
+  id              String    @id @default(cuid())
+  courseId        String    @unique
+  enabled         Boolean   @default(true)
+  title           String    // Certificate title
+  description     String?   @db.Text
+  signatoryName   String?   // Name of person signing
+  signatoryTitle  String?   // Title of signatory
+  signatureUrl    String?   // Signature image URL
+  logoUrl         String?   // Organization logo
+  backgroundColor String    @default("#ffffff")
+  textColor       String    @default("#000000")
+  borderColor     String    @default("#d4af37")
+  validityMonths  Int?      // Certificate validity in months
+  minScore        Int       @default(70) // Minimum quiz score to get certificate
+  requireAllLessons Boolean @default(true) // Must complete all lessons
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("certificate_templates")
+}
+
 model Certificate {
-  id           String   @id @default(cuid())
-  userId       String
-  courseId     String
-  certificateId String  @unique @default(cuid())
-  issuedAt     DateTime @default(now())
-  expiresAt    DateTime?
-  pdfUrl       String?
+  id              String    @id @default(cuid())
+  userId          String
+  courseId        String
+  certificateNumber String  @unique @default(cuid())
+  title           String
+  issuedAt        DateTime  @default(now())
+  expiresAt       DateTime?
+  pdfUrl          String?
+  verificationUrl String?
+  metadata        Json?     // Score, completion date, etc.
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)

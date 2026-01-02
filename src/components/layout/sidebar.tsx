@@ -45,6 +45,8 @@ const userItems: NavItem[] = [
 const adminItems: NavItem[] = [
   { titleKey: 'courses', href: '/dashboard/admin/courses', icon: BookOpen, roles: [Role.ADMIN, Role.TRAINER] },
   { titleKey: 'documents', href: '/dashboard/admin/documents', icon: FolderOpen, roles: [Role.ADMIN, Role.TRAINER] },
+  { titleKey: 'badges', href: '/dashboard/admin/badges', icon: Award, roles: [Role.ADMIN, Role.TRAINER] },
+  { titleKey: 'certificates', href: '/dashboard/admin/certificates', icon: FileCheck, roles: [Role.ADMIN, Role.TRAINER] },
   { titleKey: 'assignments', href: '/dashboard/admin/assignments', icon: Calendar, roles: [Role.ADMIN, Role.TRAINER, Role.MANAGER] },
   { titleKey: 'groups', href: '/dashboard/admin/groups', icon: UsersRound, roles: [Role.ADMIN, Role.MANAGER] },
   { titleKey: 'users', href: '/dashboard/admin/users', icon: UserCog, roles: [Role.ADMIN] },

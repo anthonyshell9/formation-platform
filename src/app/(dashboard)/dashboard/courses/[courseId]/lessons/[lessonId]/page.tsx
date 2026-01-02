@@ -329,6 +329,8 @@ export default async function LessonPage({ params }: Props) {
         <form
           action={async () => {
             'use server'
+            const { checkAndAwardBadges } = await import('@/lib/services/awards')
+
             // Mark lesson as completed
             const progress = await prisma.courseProgress.findUnique({
               where: {
@@ -367,12 +369,17 @@ export default async function LessonPage({ params }: Props) {
                 },
               })
 
+              const progressPercent = Math.round((completedLessons / allLessons) * 100)
+
               await prisma.courseProgress.update({
                 where: { id: progress.id },
-                data: {
-                  progressPercent: Math.round((completedLessons / allLessons) * 100),
-                },
+                data: { progressPercent },
               })
+
+              // Check and award badges/certificates if course is complete
+              if (progressPercent >= 100) {
+                await checkAndAwardBadges(session.user.id, courseId)
+              }
             }
           }}
         >
