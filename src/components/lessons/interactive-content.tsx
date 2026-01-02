@@ -429,6 +429,8 @@ export function FlashcardsExercise({ cards }: FlashcardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [shuffledCards, setShuffledCards] = useState<FlashCard[]>([])
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [knownCards, setKnownCards] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     setShuffledCards([...cards])
@@ -438,19 +440,42 @@ export function FlashcardsExercise({ cards }: FlashcardsProps) {
     setShuffledCards([...cards].sort(() => Math.random() - 0.5))
     setCurrentIndex(0)
     setIsFlipped(false)
+    setKnownCards(new Set())
+  }
+
+  const handleFlip = () => {
+    if (isAnimating) return
+    setIsAnimating(true)
+    setIsFlipped(!isFlipped)
+    setTimeout(() => setIsAnimating(false), 600)
   }
 
   const handleNext = () => {
-    if (currentIndex < shuffledCards.length - 1) {
-      setCurrentIndex(prev => prev + 1)
+    if (currentIndex < shuffledCards.length - 1 && !isAnimating) {
+      setIsAnimating(true)
       setIsFlipped(false)
+      setTimeout(() => {
+        setCurrentIndex(prev => prev + 1)
+        setIsAnimating(false)
+      }, 150)
     }
   }
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1)
+    if (currentIndex > 0 && !isAnimating) {
+      setIsAnimating(true)
       setIsFlipped(false)
+      setTimeout(() => {
+        setCurrentIndex(prev => prev - 1)
+        setIsAnimating(false)
+      }, 150)
+    }
+  }
+
+  const markAsKnown = () => {
+    if (currentCard) {
+      setKnownCards(prev => new Set([...prev, currentCard.id]))
+      handleNext()
     }
   }
 
@@ -458,78 +483,137 @@ export function FlashcardsExercise({ cards }: FlashcardsProps) {
 
   if (!currentCard) return null
 
+  const progress = Math.round((knownCards.size / shuffledCards.length) * 100)
+
   return (
     <div className="space-y-6">
+      {/* Header with progress */}
       <div className="flex items-center justify-between">
-        <Badge variant="outline">
-          Carte {currentIndex + 1} / {shuffledCards.length}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-sm px-3 py-1">
+            {currentIndex + 1} / {shuffledCards.length}
+          </Badge>
+          {knownCards.size > 0 && (
+            <Badge className="bg-green-500 text-white">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              {knownCards.size} maitrise{knownCards.size > 1 ? 's' : ''}
+            </Badge>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={handleShuffle}>
           <Shuffle className="mr-2 h-4 w-4" />
-          Melanger
+          Recommencer
         </Button>
       </div>
 
-      {/* Flashcard */}
+      {/* Progress bar */}
+      {shuffledCards.length > 1 && (
+        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+          <div
+            className="h-full bg-green-500 transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
+      {/* Flashcard with 3D flip */}
       <div
-        onClick={() => setIsFlipped(!isFlipped)}
-        className="cursor-pointer perspective-1000"
+        onClick={handleFlip}
+        className="cursor-pointer select-none"
+        style={{ perspective: '1000px' }}
       >
         <div
-          className={cn(
-            "relative w-full min-h-[250px] transition-transform duration-500 transform-style-preserve-3d",
-            isFlipped && "[transform:rotateY(180deg)]"
-          )}
+          className="relative w-full transition-all duration-500 ease-in-out"
+          style={{
+            transformStyle: 'preserve-3d',
+            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            minHeight: '280px',
+          }}
         >
-          {/* Front */}
-          <Card className={cn(
-            "absolute w-full h-full backface-hidden",
-            "flex items-center justify-center p-8"
-          )}>
-            <CardContent className="text-center">
-              <p className="text-xs text-muted-foreground mb-4">Question</p>
-              <p className="text-xl font-medium">{currentCard.front}</p>
-              <p className="text-sm text-muted-foreground mt-6">
-                Cliquez pour voir la reponse
-              </p>
-            </CardContent>
-          </Card>
+          {/* Front - Question */}
+          <div
+            className="absolute inset-0 rounded-2xl border-2 bg-gradient-to-br from-background to-muted/50 shadow-lg flex flex-col items-center justify-center p-8"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+            }}
+          >
+            <div className="absolute top-4 left-4">
+              <Badge variant="secondary" className="text-xs">
+                Question
+              </Badge>
+            </div>
+            <div className="text-center max-w-md">
+              <p className="text-2xl font-semibold leading-relaxed">{currentCard.front}</p>
+            </div>
+            <div className="absolute bottom-4 flex items-center gap-2 text-muted-foreground">
+              <RotateCcw className="h-4 w-4" />
+              <span className="text-sm">Cliquez pour retourner</span>
+            </div>
+          </div>
 
-          {/* Back */}
-          <Card className={cn(
-            "absolute w-full h-full backface-hidden [transform:rotateY(180deg)]",
-            "flex items-center justify-center p-8 bg-primary/5"
-          )}>
-            <CardContent className="text-center">
-              <p className="text-xs text-muted-foreground mb-4">Reponse</p>
-              <p className="text-xl font-medium">{currentCard.back}</p>
-              <p className="text-sm text-muted-foreground mt-6">
-                Cliquez pour voir la question
-              </p>
-            </CardContent>
-          </Card>
+          {/* Back - Answer */}
+          <div
+            className="absolute inset-0 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 shadow-lg flex flex-col items-center justify-center p-8"
+            style={{
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}
+          >
+            <div className="absolute top-4 left-4">
+              <Badge className="bg-primary text-primary-foreground text-xs">
+                Reponse
+              </Badge>
+            </div>
+            <div className="text-center max-w-md">
+              <p className="text-2xl font-semibold leading-relaxed text-primary">{currentCard.back}</p>
+            </div>
+            <div className="absolute bottom-4 flex items-center gap-2 text-muted-foreground">
+              <RotateCcw className="h-4 w-4" />
+              <span className="text-sm">Cliquez pour retourner</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
+      {/* Actions */}
+      <div className="flex items-center justify-between gap-4">
         <Button
           variant="outline"
           onClick={handlePrev}
-          disabled={currentIndex === 0}
+          disabled={currentIndex === 0 || isAnimating}
+          className="flex-1"
         >
           <ChevronLeft className="mr-2 h-4 w-4" />
           Precedente
         </Button>
+
+        <Button
+          variant="default"
+          onClick={markAsKnown}
+          disabled={knownCards.has(currentCard.id) || isAnimating}
+          className="flex-1 bg-green-600 hover:bg-green-700"
+        >
+          <CheckCircle2 className="mr-2 h-4 w-4" />
+          {knownCards.has(currentCard.id) ? 'Maitrise !' : 'Je sais'}
+        </Button>
+
         <Button
           variant="outline"
           onClick={handleNext}
-          disabled={currentIndex === shuffledCards.length - 1}
+          disabled={currentIndex === shuffledCards.length - 1 || isAnimating}
+          className="flex-1"
         >
           Suivante
           <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
+
+      {/* Keyboard hint */}
+      <p className="text-center text-xs text-muted-foreground">
+        Astuce: Utilisez Espace pour retourner, les fleches pour naviguer
+      </p>
     </div>
   )
 }
