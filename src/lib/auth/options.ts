@@ -113,6 +113,32 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider === 'credentials') {
         token.provider = 'credentials'
       }
+
+      // Always fetch role from database if not set or on OAuth login
+      if (!token.role || account?.provider === 'azure-ad') {
+        try {
+          const dbUser = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { id: token.id as string },
+                { email: token.email as string },
+              ],
+            },
+            select: { id: true, role: true },
+          })
+          if (dbUser) {
+            token.id = dbUser.id
+            token.role = dbUser.role
+          } else {
+            // Default to LEARNER if user not found
+            token.role = Role.LEARNER
+          }
+        } catch (error) {
+          console.error('JWT callback - fetch role error:', error)
+          token.role = Role.LEARNER
+        }
+      }
+
       return token
     },
     async session({ session, token, user }) {

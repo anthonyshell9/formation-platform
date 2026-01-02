@@ -209,15 +209,44 @@ export default async function CourseDetailPage({ params }: Props) {
             <form
               action={async () => {
                 'use server'
+                // Verify user exists in database, create if not (for OAuth users)
+                let dbUser = await prisma.user.findUnique({
+                  where: { id: session.user.id },
+                })
+
+                if (!dbUser && session.user.email) {
+                  // Try to find by email
+                  dbUser = await prisma.user.findUnique({
+                    where: { email: session.user.email },
+                  })
+
+                  if (!dbUser) {
+                    // Create user for OAuth login
+                    dbUser = await prisma.user.create({
+                      data: {
+                        id: session.user.id,
+                        email: session.user.email,
+                        name: session.user.name || null,
+                        image: session.user.image || null,
+                        isActive: true,
+                      },
+                    })
+                  }
+                }
+
+                if (!dbUser) {
+                  throw new Error('User not found')
+                }
+
                 await prisma.enrollment.create({
                   data: {
-                    userId: session.user.id,
+                    userId: dbUser.id,
                     courseId,
                   },
                 })
                 await prisma.courseProgress.create({
                   data: {
-                    userId: session.user.id,
+                    userId: dbUser.id,
                     courseId,
                     progressPercent: 0,
                   },
