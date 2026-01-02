@@ -17,6 +17,9 @@ export default async function DashboardLayout({
 
   const userRole: Role = session.user.role || Role.LEARNER
 
+  // Debug: log the role being passed
+  console.log('[Layout] Session user:', session.user.email, 'Role:', session.user.role, 'Using:', userRole)
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar userRole={userRole} />

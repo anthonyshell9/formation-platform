@@ -62,14 +62,17 @@ export function Sidebar({ userRole }: SidebarProps) {
   const t = useTranslations('nav')
 
   // Debug log for role checking
-  console.log('[Sidebar] userRole received:', userRole)
+  console.log('[Sidebar] userRole received:', userRole, 'type:', typeof userRole)
+  console.log('[Sidebar] Role.LEARNER:', Role.LEARNER, 'Comparison:', userRole === Role.LEARNER, userRole === 'LEARNER')
 
   // Only show admin section for non-LEARNER roles
-  const isAdmin = userRole && userRole !== Role.LEARNER &&
-    ([Role.ADMIN, Role.TRAINER, Role.MANAGER] as Role[]).includes(userRole)
+  // Use string comparison to handle serialization issues
+  const roleStr = String(userRole)
+  const isAdmin = roleStr && roleStr !== 'LEARNER' &&
+    ['ADMIN', 'TRAINER', 'MANAGER'].includes(roleStr)
 
   const filteredAdminItems = isAdmin ? adminItems.filter(
-    item => !item.roles || item.roles.includes(userRole)
+    item => !item.roles || item.roles.map(r => String(r)).includes(roleStr)
   ) : []
 
   return (
