@@ -18,6 +18,35 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { courseId } = await params
 
+    // Verify user exists in database, create if not (for OAuth users)
+    let dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    })
+
+    if (!dbUser && session.user.email) {
+      // Try to find by email
+      dbUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+      })
+
+      if (!dbUser) {
+        // Create user for OAuth login
+        dbUser = await prisma.user.create({
+          data: {
+            id: session.user.id,
+            email: session.user.email,
+            name: session.user.name,
+            image: session.user.image,
+            isActive: true,
+          },
+        })
+      }
+    }
+
+    if (!dbUser) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
+    }
+
     const course = await prisma.course.findUnique({
       where: { id: courseId },
     })
@@ -34,7 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const existingEnrollment = await prisma.enrollment.findUnique({
       where: {
         userId_courseId: {
-          userId: session.user.id,
+          userId: dbUser.id,
           courseId,
         },
       },
@@ -46,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const enrollment = await prisma.enrollment.create({
       data: {
-        userId: session.user.id,
+        userId: dbUser.id,
         courseId,
         status: EnrollmentStatus.ENROLLED,
       },
@@ -55,14 +84,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Create initial progress
     await prisma.courseProgress.create({
       data: {
-        userId: session.user.id,
+        userId: dbUser.id,
         courseId,
         progressPercent: 0,
       },
     })
 
     await createAuditLog({
-      userId: session.user.id,
+      userId: dbUser.id,
       action: AuditActions.ENROLLMENT_CREATE,
       resource: 'enrollment',
       resourceId: enrollment.id,
