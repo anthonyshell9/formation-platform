@@ -16,13 +16,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Table,
   TableBody,
   TableCell,
@@ -56,14 +49,6 @@ interface BadgeType {
   }
 }
 
-const BADGE_CATEGORIES = [
-  { value: 'progression', label: 'Progression' },
-  { value: 'quiz', label: 'Quiz' },
-  { value: 'cybersecurite', label: 'Cybersécurité' },
-  { value: 'engagement', label: 'Engagement' },
-  { value: 'special', label: 'Spécial' },
-]
-
 const DEFAULT_BADGE_ICONS = [
   '/badges/star.svg',
   '/badges/trophy.svg',
@@ -86,7 +71,6 @@ export default function AdminBadgesPage() {
     description: '',
     imageUrl: '',
     points: 10,
-    category: '',
   })
 
   useEffect(() => {
@@ -113,7 +97,6 @@ export default function AdminBadgesPage() {
       description: '',
       imageUrl: '',
       points: 10,
-      category: '',
     })
     setEditingBadge(null)
   }
@@ -125,7 +108,6 @@ export default function AdminBadgesPage() {
       description: badge.description || '',
       imageUrl: badge.imageUrl,
       points: badge.points,
-      category: badge.category || '',
     })
     setDialogOpen(true)
   }
@@ -267,35 +249,15 @@ export default function AdminBadgesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="points">Points</Label>
-                  <Input
-                    id="points"
-                    type="number"
-                    value={formData.points}
-                    onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
-                    min={0}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="category">Catégorie</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choisir..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BADGE_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label htmlFor="points">Points</Label>
+                <Input
+                  id="points"
+                  type="number"
+                  value={formData.points}
+                  onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
+                  min={0}
+                />
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -367,7 +329,6 @@ export default function AdminBadgesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Badge</TableHead>
-                  <TableHead>Catégorie</TableHead>
                   <TableHead className="text-center">Points</TableHead>
                   <TableHead className="text-center">Attribués</TableHead>
                   <TableHead className="text-center">Cours liés</TableHead>
@@ -392,15 +353,6 @@ export default function AdminBadgesPage() {
                           )}
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {badge.category ? (
-                        <Badge variant="outline">
-                          {BADGE_CATEGORIES.find(c => c.value === badge.category)?.label || badge.category}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="secondary">{badge.points} pts</Badge>

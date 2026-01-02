@@ -1,5 +1,6 @@
 import { getSession } from '@/lib/auth/session'
 import { notFound, redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -21,6 +22,9 @@ import {
   Link as LinkIcon,
   File,
   ExternalLink,
+  Clock,
+  Target,
+  XCircle,
 } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -72,8 +76,45 @@ export default async function LessonPage({ params }: Props) {
         },
       },
       media: true,
+      quiz: {
+        include: {
+          questions: {
+            orderBy: { order: 'asc' },
+            include: {
+              options: { orderBy: { order: 'asc' } },
+            },
+          },
+        },
+      },
     },
   })
+
+  // Get user's quiz attempts if this is a quiz lesson
+  let quizAttempts: {
+    id: string
+    score: number | null
+    passed: boolean | null
+    startedAt: Date
+    completedAt: Date | null
+  }[] = []
+
+  if (lesson?.quiz) {
+    quizAttempts = await prisma.quizAttempt.findMany({
+      where: {
+        quizId: lesson.quiz.id,
+        userId: session.user.id,
+      },
+      orderBy: { startedAt: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        score: true,
+        passed: true,
+        startedAt: true,
+        completedAt: true,
+      },
+    })
+  }
 
   if (!lesson || lesson.module.courseId !== courseId) {
     notFound()
@@ -212,6 +253,97 @@ export default async function LessonPage({ params }: Props) {
           {/* VIDEO */}
           {lesson.contentType === 'VIDEO' && lesson.videoUrl && (
             <VideoPlayer url={lesson.videoUrl} />
+          )}
+
+          {/* QUIZ */}
+          {lesson.contentType === 'QUIZ' && lesson.quiz && (
+            <div className="space-y-6">
+              {/* Quiz Info */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card>
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <HelpCircle className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <p className="text-2xl font-bold">{lesson.quiz.questions.length}</p>
+                      <p className="text-sm text-muted-foreground">Questions</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <Clock className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <p className="text-2xl font-bold">{lesson.quiz.timeLimit || '-'}</p>
+                      <p className="text-sm text-muted-foreground">Min. limite</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="flex items-center gap-4 p-4">
+                    <Target className="h-8 w-8 text-purple-600" />
+                    <div>
+                      <p className="text-2xl font-bold">{lesson.quiz.passingScore}%</p>
+                      <p className="text-sm text-muted-foreground">Score requis</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quiz Description */}
+              {lesson.quiz.description && (
+                <div className="p-4 bg-muted rounded-lg">
+                  <p>{lesson.quiz.description}</p>
+                </div>
+              )}
+
+              {/* Previous Attempts */}
+              {quizAttempts.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Vos tentatives précédentes</h4>
+                  {quizAttempts.map((attempt) => (
+                    <div
+                      key={attempt.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-accent/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        {attempt.passed ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            Score: {Math.round(attempt.score || 0)}%
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(attempt.startedAt).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={attempt.passed ? 'default' : 'destructive'}>
+                        {attempt.passed ? 'Réussi' : 'Échoué'}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Start Quiz Button */}
+              <div className="flex justify-center">
+                <Button asChild size="lg">
+                  <Link href={`/dashboard/quizzes/${lesson.quiz.id}/take?lessonId=${lessonId}&courseId=${courseId}`}>
+                    <HelpCircle className="mr-2 h-5 w-5" />
+                    {quizAttempts.length > 0 ? 'Repasser le quiz' : 'Commencer le quiz'}
+                  </Link>
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* TEXT */}
@@ -380,6 +512,11 @@ export default async function LessonPage({ params }: Props) {
               if (progressPercent >= 100) {
                 await checkAndAwardBadges(session.user.id, courseId)
               }
+
+              // Revalidate the course page to show updated progress
+              revalidatePath(`/dashboard/courses/${courseId}`)
+              revalidatePath(`/dashboard/courses/${courseId}/lessons/${lessonId}`)
+              revalidatePath('/dashboard/my-courses')
             }
           }}
         >
