@@ -41,11 +41,9 @@ export function DragDropExercise({ zones, items, onComplete }: DragDropProps) {
   const [placements, setPlacements] = useState<Record<string, string>>({})
   const [draggedItem, setDraggedItem] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [shuffledItems, setShuffledItems] = useState<DragDropItem[]>([])
-
-  useEffect(() => {
-    setShuffledItems([...items].sort(() => Math.random() - 0.5))
-  }, [items])
+  const [shuffledItems, setShuffledItems] = useState<DragDropItem[]>(() =>
+    [...items].sort(() => Math.random() - 0.5)
+  )
 
   const handleDragStart = (itemId: string) => {
     setDraggedItem(itemId)
@@ -193,11 +191,9 @@ export function MatchingExercise({ pairs, onComplete }: MatchingProps) {
   const [connections, setConnections] = useState<Record<string, string>>({})
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
-  const [shuffledRight, setShuffledRight] = useState<MatchingPair[]>([])
-
-  useEffect(() => {
-    setShuffledRight([...pairs].sort(() => Math.random() - 0.5))
-  }, [pairs])
+  const [shuffledRight, setShuffledRight] = useState<MatchingPair[]>(() =>
+    [...pairs].sort(() => Math.random() - 0.5)
+  )
 
   const handleLeftClick = (pairId: string) => {
     if (submitted) return
@@ -280,7 +276,6 @@ export function MatchingExercise({ pairs, onComplete }: MatchingProps) {
         <div className="space-y-2">
           {shuffledRight.map(pair => {
             const connectedTo = Object.entries(connections).find(([, v]) => v === pair.id)?.[0]
-            const isConnectedFrom = connectedTo ? pairs.find(p => p.id === connectedTo) : null
 
             return (
               <button
@@ -428,13 +423,9 @@ interface FlashcardsProps {
 export function FlashcardsExercise({ cards }: FlashcardsProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
-  const [shuffledCards, setShuffledCards] = useState<FlashCard[]>([])
+  const [shuffledCards, setShuffledCards] = useState<FlashCard[]>(() => [...cards])
   const [isAnimating, setIsAnimating] = useState(false)
   const [knownCards, setKnownCards] = useState<Set<string>>(new Set())
-
-  useEffect(() => {
-    setShuffledCards([...cards])
-  }, [cards])
 
   const handleShuffle = () => {
     setShuffledCards([...cards].sort(() => Math.random() - 0.5))
@@ -633,13 +624,11 @@ interface SortingProps {
 }
 
 export function SortingExercise({ items, onComplete }: SortingProps) {
-  const [orderedItems, setOrderedItems] = useState<SortingItem[]>([])
+  const [orderedItems, setOrderedItems] = useState<SortingItem[]>(() =>
+    [...items].sort(() => Math.random() - 0.5)
+  )
   const [submitted, setSubmitted] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    setOrderedItems([...items].sort(() => Math.random() - 0.5))
-  }, [items])
 
   const handleDragStart = (index: number) => {
     setDraggedIndex(index)
@@ -817,7 +806,7 @@ interface MarkdownContentProps {
 export function MarkdownContent({ content }: MarkdownContentProps) {
   // Basic markdown to HTML conversion
   const renderMarkdown = (text: string) => {
-    let html = text
+    const html = text
       // Headers
       .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-6 mb-2">$1</h3>')
       .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-8 mb-3">$1</h2>')

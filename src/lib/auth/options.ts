@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ account }) {
       // For credentials provider, user is already validated
       if (account?.provider === 'credentials') {
         return true
