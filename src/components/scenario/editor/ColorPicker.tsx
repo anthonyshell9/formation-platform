@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { textColors, accentColors } from '@/lib/background-images'
+import { textColors } from '@/lib/background-images'
 import { cn } from '@/lib/utils'
 import { Check, Palette } from 'lucide-react'
 

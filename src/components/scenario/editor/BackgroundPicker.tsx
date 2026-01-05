@@ -27,7 +27,7 @@ import {
   presetGradients,
   presetColors,
 } from '@/lib/background-images'
-import { ImageIcon, Palette, Sparkles, Video, Plus, Check, Upload } from 'lucide-react'
+import { ImageIcon, Palette, Sparkles, Video, Plus, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BackgroundPickerProps {

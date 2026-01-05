@@ -15,7 +15,10 @@ export function GallerySlide({ slide }: GallerySlideProps) {
   const { images, layout = 'grid', columns = 3 } = slide
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   const openLightbox = useCallback((index: number) => {

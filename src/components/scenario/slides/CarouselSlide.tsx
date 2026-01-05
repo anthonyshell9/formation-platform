@@ -15,7 +15,10 @@ export function CarouselSlide({ slide }: CarouselSlideProps) {
   const { items, autoPlay, autoPlayInterval = 5000, showArrows = true, showDots = true } = slide
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   // Auto-play functionality

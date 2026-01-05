@@ -62,9 +62,6 @@ export function InteractiveSlide({ slide, onComplete }: InteractiveSlideProps) {
   const renderInteractive = () => {
     const config = slide.config as Record<string, unknown>
 
-    // Check if config has required data
-    const hasConfig = config && Object.keys(config).length > 0
-
     switch (slide.interactiveType) {
       case 'drag-drop':
         if (!config.zones || !config.items || (config.zones as []).length === 0) {

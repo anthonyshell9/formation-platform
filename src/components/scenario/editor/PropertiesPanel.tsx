@@ -24,7 +24,7 @@ import {
 import { BackgroundPicker } from './BackgroundPicker'
 import { ColorPicker, InlineColorPicker } from './ColorPicker'
 import { textColors, accentColors } from '@/lib/background-images'
-import { Plus, Trash2, Image, Type, Video, Sparkles, Move, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Image, Type, Video, Sparkles, GripVertical } from 'lucide-react'
 
 interface PropertiesPanelProps {
   slide: Slide | null
@@ -673,7 +673,7 @@ export function PropertiesPanel({
                         Ajoutez des éléments à votre scène
                       </p>
                     )}
-                    {slide.elements?.map((element, i) => (
+                    {slide.elements?.map((element) => (
                       <div
                         key={element.id}
                         className="p-3 border rounded-lg space-y-3 bg-background"
