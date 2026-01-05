@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import type { Slide, Background, ScenarioTheme } from '@/types/scenario'
+import type { Slide, ScenarioTheme, ScenarioElement } from '@/types/scenario'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -20,7 +21,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { Plus, Trash2, Upload } from 'lucide-react'
+import { BackgroundPicker } from './BackgroundPicker'
+import { ColorPicker, InlineColorPicker } from './ColorPicker'
+import { textColors, accentColors } from '@/lib/background-images'
+import { Plus, Trash2, Image, Type, Video, Sparkles, Move, GripVertical } from 'lucide-react'
 
 interface PropertiesPanelProps {
   slide: Slide | null
@@ -34,158 +38,22 @@ function generateId(): string {
   return `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-// Background editor component
-function BackgroundEditor({
-  background,
-  onChange,
-}: {
-  background?: Background
-  onChange: (bg: Background) => void
-}) {
-  const bgType = background?.type || 'solid'
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <Label>Type de fond</Label>
-        <Select
-          value={bgType}
-          onValueChange={(value) => {
-            if (value === 'solid') {
-              onChange({ type: 'solid', color: '#0A0A0A' })
-            } else if (value === 'gradient') {
-              onChange({
-                type: 'gradient',
-                colors: ['#0A4D4A', '#00A693'],
-                direction: 'to-bottom-right',
-              })
-            } else if (value === 'image') {
-              onChange({ type: 'image', url: '' })
-            } else if (value === 'video') {
-              onChange({ type: 'video', url: '' })
-            }
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="solid">Couleur unie</SelectItem>
-            <SelectItem value="gradient">Dégradé</SelectItem>
-            <SelectItem value="image">Image</SelectItem>
-            <SelectItem value="video">Vidéo</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {background?.type === 'solid' && (
-        <div>
-          <Label>Couleur</Label>
-          <div className="flex gap-2">
-            <input
-              type="color"
-              value={background.color}
-              onChange={(e) => onChange({ ...background, color: e.target.value })}
-              className="w-10 h-10 rounded border cursor-pointer"
-            />
-            <Input
-              value={background.color}
-              onChange={(e) => onChange({ ...background, color: e.target.value })}
-              placeholder="#000000"
-            />
-          </div>
-        </div>
-      )}
-
-      {background?.type === 'gradient' && (
-        <>
-          <div>
-            <Label>Couleurs du dégradé</Label>
-            <div className="flex gap-2">
-              {background.colors.map((color, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => {
-                      const newColors = [...background.colors]
-                      newColors[i] = e.target.value
-                      onChange({ ...background, colors: newColors })
-                    }}
-                    className="w-8 h-8 rounded border cursor-pointer"
-                  />
-                </div>
-              ))}
-              {background.colors.length < 4 && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    onChange({
-                      ...background,
-                      colors: [...background.colors, '#000000'],
-                    })
-                  }
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-          <div>
-            <Label>Direction</Label>
-            <Select
-              value={background.direction || 'to-bottom'}
-              onValueChange={(value) =>
-                onChange({
-                  ...background,
-                  direction: value as Background & { type: 'gradient' } extends { direction: infer D } ? D : never,
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="to-bottom">Vers le bas</SelectItem>
-                <SelectItem value="to-right">Vers la droite</SelectItem>
-                <SelectItem value="to-bottom-right">Diagonale (↘)</SelectItem>
-                <SelectItem value="to-top-right">Diagonale (↗)</SelectItem>
-                <SelectItem value="radial">Radial</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </>
-      )}
-
-      {(background?.type === 'image' || background?.type === 'video') && (
-        <>
-          <div>
-            <Label>URL {background.type === 'image' ? "de l'image" : 'de la vidéo'}</Label>
-            <div className="flex gap-2">
-              <Input
-                value={background.url}
-                onChange={(e) => onChange({ ...background, url: e.target.value })}
-                placeholder="https://..."
-              />
-              <Button variant="outline" size="icon">
-                <Upload className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          <div>
-            <Label>Overlay (optionnel)</Label>
-            <Input
-              value={background.overlay || ''}
-              onChange={(e) => onChange({ ...background, overlay: e.target.value })}
-              placeholder="rgba(0,0,0,0.5)"
-            />
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
+const animationTypes = [
+  { value: 'none', label: 'Aucune' },
+  { value: 'fade-in', label: 'Fondu' },
+  { value: 'slide-up', label: 'Glisser (haut)' },
+  { value: 'slide-down', label: 'Glisser (bas)' },
+  { value: 'slide-left', label: 'Glisser (gauche)' },
+  { value: 'slide-right', label: 'Glisser (droite)' },
+  { value: 'zoom-in', label: 'Zoom avant' },
+  { value: 'zoom-out', label: 'Zoom arrière' },
+  { value: 'bounce', label: 'Rebond' },
+  { value: 'pulse', label: 'Pulsation' },
+  { value: 'shake', label: 'Secousse' },
+  { value: 'rotate', label: 'Rotation' },
+  { value: 'flip', label: 'Retournement' },
+  { value: 'blur-in', label: 'Flou' },
+]
 
 export function PropertiesPanel({
   slide,
@@ -193,7 +61,7 @@ export function PropertiesPanel({
   onSlideChange,
   onThemeChange,
 }: PropertiesPanelProps) {
-  const [activeSection, setActiveSection] = useState<string[]>(['content'])
+  const [activeSection, setActiveSection] = useState<string[]>(['content', 'background'])
 
   if (!slide) {
     return (
@@ -205,6 +73,31 @@ export function PropertiesPanel({
 
   const updateSlide = (updates: Partial<Slide>) => {
     onSlideChange({ ...slide, ...updates } as Slide)
+  }
+
+  // Helper for scenario elements
+  const updateElement = (elementId: string, updates: Partial<ScenarioElement>) => {
+    if (slide.type !== 'scenario') return
+    const newElements = slide.elements?.map((el) =>
+      el.id === elementId ? { ...el, ...updates } : el
+    )
+    updateSlide({ elements: newElements })
+  }
+
+  const addElement = (type: ScenarioElement['type']) => {
+    if (slide.type !== 'scenario') return
+    const newElement: ScenarioElement = {
+      id: generateId(),
+      type,
+      content: type === 'text' ? 'Nouveau texte' : type === 'icon' ? '🔒' : '',
+      animation: { type: 'fade-in', duration: 500 },
+    }
+    updateSlide({ elements: [...(slide.elements || []), newElement] })
+  }
+
+  const removeElement = (elementId: string) => {
+    if (slide.type !== 'scenario') return
+    updateSlide({ elements: slide.elements?.filter((el) => el.id !== elementId) })
   }
 
   return (
@@ -242,6 +135,18 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ subtitle: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+                <ColorPicker
+                  label="Couleur du sous-titre"
+                  value={slide.subtitleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ subtitleColor: color })}
+                  presets={textColors}
+                />
               </>
             )}
 
@@ -255,6 +160,12 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ title: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
                 <div>
                   <Label>Texte</Label>
                   <Textarea
@@ -263,6 +174,12 @@ export function PropertiesPanel({
                     rows={5}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du texte"
+                  value={slide.textColor || '#E5E5E5'}
+                  onChange={(color) => updateSlide({ textColor: color })}
+                  presets={textColors}
+                />
                 <div>
                   <Label>Layout</Label>
                   <Select
@@ -306,6 +223,12 @@ export function PropertiesPanel({
                     rows={3}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur de la citation"
+                  value={slide.quoteColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ quoteColor: color })}
+                  presets={textColors}
+                />
                 <div>
                   <Label>Auteur</Label>
                   <Input
@@ -320,6 +243,12 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ authorTitle: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur accent"
+                  value={slide.accentColor || '#00A693'}
+                  onChange={(color) => updateSlide({ accentColor: color })}
+                  presets={accentColors}
+                />
               </>
             )}
 
@@ -333,6 +262,12 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ title: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
                 <div>
                   <Label>URL de la vidéo</Label>
                   <Input
@@ -368,6 +303,24 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ title: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+                <ColorPicker
+                  label="Couleur des chiffres"
+                  value={slide.valueColor || '#00A693'}
+                  onChange={(color) => updateSlide({ valueColor: color })}
+                  presets={accentColors}
+                />
+                <ColorPicker
+                  label="Couleur des labels"
+                  value={slide.labelColor || '#E5E5E5'}
+                  onChange={(color) => updateSlide({ labelColor: color })}
+                  presets={textColors}
+                />
                 <div className="flex items-center justify-between">
                   <Label>Animation des chiffres</Label>
                   <Switch
@@ -381,7 +334,7 @@ export function PropertiesPanel({
                   <Label>Statistiques</Label>
                   <div className="space-y-2 mt-2">
                     {slide.stats.map((stat, i) => (
-                      <div key={stat.id} className="flex gap-2">
+                      <div key={stat.id} className="flex gap-2 items-center">
                         <Input
                           value={stat.value}
                           onChange={(e) => {
@@ -396,6 +349,16 @@ export function PropertiesPanel({
                           }}
                           placeholder="Valeur"
                           className="w-20"
+                        />
+                        <Input
+                          value={stat.suffix || ''}
+                          onChange={(e) => {
+                            const newStats = [...slide.stats]
+                            newStats[i] = { ...stat, suffix: e.target.value }
+                            updateSlide({ stats: newStats })
+                          }}
+                          placeholder="%"
+                          className="w-12"
                         />
                         <Input
                           value={stat.label}
@@ -451,6 +414,12 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ title: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
                 <div className="flex items-center justify-between">
                   <Label>Flèches</Label>
                   <Switch
@@ -542,6 +511,18 @@ export function PropertiesPanel({
                     onChange={(e) => updateSlide({ title: e.target.value })}
                   />
                 </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+                <ColorPicker
+                  label="Couleur de la ligne"
+                  value={slide.lineColor || '#00A693'}
+                  onChange={(color) => updateSlide({ lineColor: color })}
+                  presets={accentColors}
+                />
                 <div>
                   <Label>Orientation</Label>
                   <Select
@@ -625,6 +606,428 @@ export function PropertiesPanel({
                 </div>
               </>
             )}
+
+            {/* Scenario slides - NEW COMPLETE EDITOR */}
+            {slide.type === 'scenario' && (
+              <>
+                <div>
+                  <Label>Titre de la scène</Label>
+                  <Input
+                    value={slide.title || ''}
+                    onChange={(e) => updateSlide({ title: e.target.value })}
+                    placeholder="Titre optionnel"
+                  />
+                </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>Éléments de la scène</Label>
+                  </div>
+
+                  {/* Add element buttons */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addElement('text')}
+                    >
+                      <Type className="w-4 h-4 mr-1" />
+                      Texte
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addElement('image')}
+                    >
+                      <Image className="w-4 h-4 mr-1" />
+                      Image
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addElement('icon')}
+                    >
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      Icône
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addElement('video')}
+                    >
+                      <Video className="w-4 h-4 mr-1" />
+                      Vidéo
+                    </Button>
+                  </div>
+
+                  {/* Elements list */}
+                  <div className="space-y-3">
+                    {(!slide.elements || slide.elements.length === 0) && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Ajoutez des éléments à votre scène
+                      </p>
+                    )}
+                    {slide.elements?.map((element, i) => (
+                      <div
+                        key={element.id}
+                        className="p-3 border rounded-lg space-y-3 bg-background"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm font-medium capitalize">
+                              {element.type === 'text' && 'Texte'}
+                              {element.type === 'image' && 'Image'}
+                              {element.type === 'icon' && 'Icône'}
+                              {element.type === 'video' && 'Vidéo'}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => removeElement(element.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+
+                        {/* Content based on type */}
+                        {element.type === 'text' && (
+                          <>
+                            <Textarea
+                              value={element.content}
+                              onChange={(e) =>
+                                updateElement(element.id, { content: e.target.value })
+                              }
+                              placeholder="Votre texte..."
+                              rows={2}
+                            />
+                            <div className="flex items-center gap-2">
+                              <Label className="text-xs">Couleur</Label>
+                              <InlineColorPicker
+                                value={element.color || '#FFFFFF'}
+                                onChange={(color) =>
+                                  updateElement(element.id, { color })
+                                }
+                                presets={textColors}
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        {element.type === 'image' && (
+                          <Input
+                            value={element.content}
+                            onChange={(e) =>
+                              updateElement(element.id, { content: e.target.value })
+                            }
+                            placeholder="URL de l'image..."
+                          />
+                        )}
+
+                        {element.type === 'icon' && (
+                          <div className="flex gap-2">
+                            <Input
+                              value={element.content}
+                              onChange={(e) =>
+                                updateElement(element.id, { content: e.target.value })
+                              }
+                              placeholder="🔒 Emoji ou icône..."
+                              className="flex-1"
+                            />
+                          </div>
+                        )}
+
+                        {element.type === 'video' && (
+                          <Input
+                            value={element.content}
+                            onChange={(e) =>
+                              updateElement(element.id, { content: e.target.value })
+                            }
+                            placeholder="URL de la vidéo..."
+                          />
+                        )}
+
+                        {/* Position */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Position X (%)</Label>
+                            <Slider
+                              value={[element.position?.x || 50]}
+                              min={0}
+                              max={100}
+                              step={1}
+                              onValueChange={([x]) =>
+                                updateElement(element.id, {
+                                  position: { x, y: element.position?.y || 50 },
+                                })
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Position Y (%)</Label>
+                            <Slider
+                              value={[element.position?.y || 50]}
+                              min={0}
+                              max={100}
+                              step={1}
+                              onValueChange={([y]) =>
+                                updateElement(element.id, {
+                                  position: { x: element.position?.x || 50, y },
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        {/* Size */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Largeur (%)</Label>
+                            <Input
+                              type="number"
+                              value={element.size?.width || ''}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  size: {
+                                    width: Number(e.target.value) || undefined,
+                                    height: element.size?.height,
+                                  },
+                                })
+                              }
+                              placeholder="Auto"
+                              className="h-8"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Hauteur (%)</Label>
+                            <Input
+                              type="number"
+                              value={element.size?.height || ''}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  size: {
+                                    width: element.size?.width,
+                                    height: Number(e.target.value) || undefined,
+                                  },
+                                })
+                              }
+                              placeholder="Auto"
+                              className="h-8"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Animation */}
+                        <div>
+                          <Label className="text-xs">Animation</Label>
+                          <Select
+                            value={element.animation?.type || 'none'}
+                            onValueChange={(value) =>
+                              updateElement(element.id, {
+                                animation: {
+                                  ...element.animation,
+                                  type: value as ScenarioElement['animation'] extends { type: infer T } ? T : never,
+                                },
+                              })
+                            }
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {animationTypes.map((anim) => (
+                                <SelectItem key={anim.value} value={anim.value}>
+                                  {anim.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Timing */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-xs">Délai (ms)</Label>
+                            <Input
+                              type="number"
+                              value={element.animation?.delay || 0}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  animation: {
+                                    ...element.animation,
+                                    type: element.animation?.type || 'fade-in',
+                                    delay: Number(e.target.value),
+                                  },
+                                })
+                              }
+                              className="h-8"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Durée (ms)</Label>
+                            <Input
+                              type="number"
+                              value={element.animation?.duration || 500}
+                              onChange={(e) =>
+                                updateElement(element.id, {
+                                  animation: {
+                                    ...element.animation,
+                                    type: element.animation?.type || 'fade-in',
+                                    duration: Number(e.target.value),
+                                  },
+                                })
+                              }
+                              className="h-8"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Gallery slides */}
+            {slide.type === 'gallery' && (
+              <>
+                <div>
+                  <Label>Titre</Label>
+                  <Input
+                    value={slide.title || ''}
+                    onChange={(e) => updateSlide({ title: e.target.value })}
+                  />
+                </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+                <div>
+                  <Label>Colonnes</Label>
+                  <Select
+                    value={String(slide.columns || 3)}
+                    onValueChange={(value) => updateSlide({ columns: Number(value) as 2 | 3 | 4 })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2">2 colonnes</SelectItem>
+                      <SelectItem value="3">3 colonnes</SelectItem>
+                      <SelectItem value="4">4 colonnes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Images</Label>
+                  <div className="space-y-2 mt-2">
+                    {slide.images.map((img, i) => (
+                      <div key={img.id} className="flex gap-2">
+                        <Input
+                          value={img.url}
+                          onChange={(e) => {
+                            const newImages = [...slide.images]
+                            newImages[i] = { ...img, url: e.target.value }
+                            updateSlide({ images: newImages })
+                          }}
+                          placeholder="URL"
+                          className="flex-1"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newImages = slide.images.filter((_, idx) => idx !== i)
+                            updateSlide({ images: newImages })
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        updateSlide({
+                          images: [...slide.images, { id: generateId(), url: '' }],
+                        })
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Ajouter
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Interactive slides */}
+            {slide.type === 'interactive' && (
+              <>
+                <div>
+                  <Label>Titre</Label>
+                  <Input
+                    value={slide.title || ''}
+                    onChange={(e) => updateSlide({ title: e.target.value })}
+                  />
+                </div>
+                <ColorPicker
+                  label="Couleur du titre"
+                  value={slide.titleColor || '#FFFFFF'}
+                  onChange={(color) => updateSlide({ titleColor: color })}
+                  presets={textColors}
+                />
+                <div>
+                  <Label>Instructions</Label>
+                  <Textarea
+                    value={slide.instructions || ''}
+                    onChange={(e) => updateSlide({ instructions: e.target.value })}
+                    placeholder="Instructions pour l'exercice..."
+                    rows={2}
+                  />
+                </div>
+                <div>
+                  <Label>Type d&apos;exercice</Label>
+                  <Select
+                    value={slide.interactiveType}
+                    onValueChange={(value) =>
+                      updateSlide({ interactiveType: value as typeof slide.interactiveType })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="quiz">Quiz</SelectItem>
+                      <SelectItem value="drag-drop">Glisser-Déposer</SelectItem>
+                      <SelectItem value="matching">Association</SelectItem>
+                      <SelectItem value="fill-blank">Texte à trous</SelectItem>
+                      <SelectItem value="hotspot">Zones cliquables</SelectItem>
+                      <SelectItem value="sorting">Classement</SelectItem>
+                      <SelectItem value="flashcards">Flashcards</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Afficher le score</Label>
+                  <Switch
+                    checked={slide.showScore !== false}
+                    onCheckedChange={(checked) => updateSlide({ showScore: checked })}
+                  />
+                </div>
+              </>
+            )}
           </AccordionContent>
         </AccordionItem>
 
@@ -632,7 +1035,7 @@ export function PropertiesPanel({
         <AccordionItem value="background">
           <AccordionTrigger>Arrière-plan</AccordionTrigger>
           <AccordionContent className="pt-2">
-            <BackgroundEditor
+            <BackgroundPicker
               background={slide.background}
               onChange={(bg) => updateSlide({ background: bg })}
             />
@@ -675,44 +1078,30 @@ export function PropertiesPanel({
         <AccordionItem value="theme">
           <AccordionTrigger>Thème global</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-2">
-            <div>
-              <Label>Couleur principale</Label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={theme.primaryColor}
-                  onChange={(e) =>
-                    onThemeChange({ ...theme, primaryColor: e.target.value })
-                  }
-                  className="w-10 h-10 rounded border cursor-pointer"
-                />
-                <Input
-                  value={theme.primaryColor}
-                  onChange={(e) =>
-                    onThemeChange({ ...theme, primaryColor: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Couleur secondaire</Label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={theme.secondaryColor}
-                  onChange={(e) =>
-                    onThemeChange({ ...theme, secondaryColor: e.target.value })
-                  }
-                  className="w-10 h-10 rounded border cursor-pointer"
-                />
-                <Input
-                  value={theme.secondaryColor}
-                  onChange={(e) =>
-                    onThemeChange({ ...theme, secondaryColor: e.target.value })
-                  }
-                />
-              </div>
-            </div>
+            <ColorPicker
+              label="Couleur principale"
+              value={theme.primaryColor}
+              onChange={(color) => onThemeChange({ ...theme, primaryColor: color })}
+              presets={accentColors}
+            />
+            <ColorPicker
+              label="Couleur secondaire"
+              value={theme.secondaryColor}
+              onChange={(color) => onThemeChange({ ...theme, secondaryColor: color })}
+              presets={accentColors}
+            />
+            <ColorPicker
+              label="Couleur du texte"
+              value={theme.textColor || '#FFFFFF'}
+              onChange={(color) => onThemeChange({ ...theme, textColor: color })}
+              presets={textColors}
+            />
+            <ColorPicker
+              label="Couleur d'accent"
+              value={theme.accentColor || '#00A693'}
+              onChange={(color) => onThemeChange({ ...theme, accentColor: color })}
+              presets={accentColors}
+            />
             <div>
               <Label>Police</Label>
               <Select

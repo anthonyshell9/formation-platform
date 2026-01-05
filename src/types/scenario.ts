@@ -115,6 +115,8 @@ export interface TitleSlide extends BaseSlide {
   type: 'title'
   title: string
   subtitle?: string
+  titleColor?: string
+  subtitleColor?: string
   titleAnimation?: AnimationConfig
   subtitleAnimation?: AnimationConfig
   titleStyle?: {
@@ -128,6 +130,8 @@ export interface TitleSlide extends BaseSlide {
 // Scenario slide - Narration with animation
 export interface ScenarioSlide extends BaseSlide {
   type: 'scenario'
+  title?: string
+  titleColor?: string
   elements?: ScenarioElement[]
   showSubtitles?: boolean
   subtitleStyle?: {
@@ -141,8 +145,9 @@ export interface ScenarioElement {
   id: string
   type: 'image' | 'icon' | 'text' | 'lottie' | 'video'
   content: string // URL or text
+  color?: string // Text color
   position?: { x: number; y: number }
-  size?: { width: number; height: number }
+  size?: { width?: number; height?: number }
   animation?: AnimationConfig
   timingStart?: number // When to show (seconds)
   timingEnd?: number // When to hide (seconds)
@@ -153,7 +158,9 @@ export interface ContentSlide extends BaseSlide {
   type: 'content'
   layout: 'text-left' | 'text-right' | 'text-top' | 'text-bottom' | 'text-center' | 'split-50' | 'split-60-40' | 'split-40-60'
   title?: string
+  titleColor?: string
   text: string // Supports markdown
+  textColor?: string
   image?: {
     url: string
     alt?: string
@@ -167,6 +174,7 @@ export interface ContentSlide extends BaseSlide {
 export interface CarouselSlide extends BaseSlide {
   type: 'carousel'
   title?: string
+  titleColor?: string
   items: CarouselItem[]
   autoPlay?: boolean
   autoPlayInterval?: number
@@ -186,6 +194,8 @@ export interface CarouselItem {
 export interface QuoteSlide extends BaseSlide {
   type: 'quote'
   quote: string
+  quoteColor?: string
+  accentColor?: string
   author?: string
   authorTitle?: string
   authorImage?: string
@@ -197,6 +207,7 @@ export interface InteractiveSlide extends BaseSlide {
   interactiveType: 'quiz' | 'drag-drop' | 'matching' | 'fill-blank' | 'sorting' | 'flashcards' | 'hotspot'
   config: Record<string, unknown> // Configuration for the interactive element
   title?: string
+  titleColor?: string
   instructions?: string
   showScore?: boolean
 }
@@ -211,6 +222,7 @@ export interface VideoSlide extends BaseSlide {
   muted?: boolean
   poster?: string
   title?: string
+  titleColor?: string
 }
 
 // Comparison slide - Before/After or Side by Side
@@ -233,6 +245,8 @@ export interface ComparisonSlide extends BaseSlide {
 export interface TimelineSlide extends BaseSlide {
   type: 'timeline'
   title?: string
+  titleColor?: string
+  lineColor?: string
   events: TimelineEvent[]
   orientation?: 'horizontal' | 'vertical'
 }
@@ -249,6 +263,9 @@ export interface TimelineEvent {
 export interface StatsSlide extends BaseSlide {
   type: 'stats'
   title?: string
+  titleColor?: string
+  valueColor?: string
+  labelColor?: string
   stats: StatItem[]
   layout?: 'grid' | 'row'
   animateCountUp?: boolean
@@ -268,9 +285,10 @@ export interface StatItem {
 export interface GallerySlide extends BaseSlide {
   type: 'gallery'
   title?: string
+  titleColor?: string
   images: GalleryImage[]
   layout: 'grid' | 'masonry' | 'carousel'
-  columns?: number
+  columns?: 2 | 3 | 4
 }
 
 export interface GalleryImage {
