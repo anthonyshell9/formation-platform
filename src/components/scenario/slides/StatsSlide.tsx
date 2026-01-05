@@ -27,8 +27,10 @@ function AnimatedNumber({
 
   useEffect(() => {
     if (typeof value !== 'number' || !animate) {
-      setDisplayValue(value)
-      return
+      const timer = requestAnimationFrame(() => {
+        setDisplayValue(value)
+      })
+      return () => cancelAnimationFrame(timer)
     }
 
     const duration = 2000 // 2 seconds
@@ -124,7 +126,10 @@ export function StatsSlide({ slide }: StatsSlideProps) {
   const { stats, layout = 'grid', animateCountUp = true } = slide
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   const gridCols = {

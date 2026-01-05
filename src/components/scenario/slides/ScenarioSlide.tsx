@@ -129,7 +129,10 @@ export function ScenarioSlide({ slide, currentTime = 0 }: ScenarioSlideProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   return (

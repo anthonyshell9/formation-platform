@@ -21,13 +21,17 @@ export function VideoSlide({ slide, onComplete }: VideoSlideProps) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
 
     if (slide.autoPlay && videoRef.current) {
       videoRef.current.play().catch(() => {
         // Autoplay blocked
       })
     }
+
+    return () => cancelAnimationFrame(timer)
   }, [slide.autoPlay])
 
   // Hide controls after inactivity

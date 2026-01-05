@@ -13,7 +13,10 @@ export function TimelineSlide({ slide }: TimelineSlideProps) {
   const { events, orientation = 'vertical' } = slide
 
   useEffect(() => {
-    setIsVisible(true)
+    const timer = requestAnimationFrame(() => {
+      setIsVisible(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   if (orientation === 'horizontal') {
