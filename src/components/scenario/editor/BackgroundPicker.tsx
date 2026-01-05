@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
+// Using <img> for dynamic URLs from user content
 import type { Background } from '@/types/scenario'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'

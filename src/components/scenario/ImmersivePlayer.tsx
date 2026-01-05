@@ -45,13 +45,21 @@ export function ImmersivePlayer({
     return () => clearTimeout(timer)
   }, [])
 
-  // Mark slide as completed when viewed
+  // Use ref to track completed slides without triggering re-renders
+  const completedSlidesRef = useRef<Set<number>>(new Set([initialSlide]))
+
+  // Sync ref to state for UI updates (dots)
   useEffect(() => {
-    if (!completedSlides.includes(currentSlide)) {
-      setCompletedSlides((prev) => [...prev, currentSlide])
+    const updateCompletedSlides = () => {
+      if (!completedSlidesRef.current.has(currentSlide)) {
+        completedSlidesRef.current.add(currentSlide)
+        setCompletedSlides(Array.from(completedSlidesRef.current))
+      }
+      onSlideChange?.(currentSlide)
     }
-    onSlideChange?.(currentSlide)
-  }, [currentSlide]) // Removed completedSlides from deps to avoid infinite loop
+    const timer = requestAnimationFrame(updateCompletedSlides)
+    return () => cancelAnimationFrame(timer)
+  }, [currentSlide, onSlideChange])
 
   // Navigation functions defined first
   const navigateWithTransition = useCallback(
