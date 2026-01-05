@@ -67,6 +67,13 @@ interface Module {
 
 const contentTypeCategories = [
   {
+    name: 'Formations immersives',
+    description: 'Experiences interactives avec narration et animations',
+    types: [
+      { value: 'INTERACTIVE_SCENARIO', label: 'Scenario interactif', icon: Play, color: 'bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 dark:from-emerald-900 dark:to-teal-900 dark:text-emerald-300', description: 'Formation immersive avec slides, audio, animations et sous-titres' },
+    ]
+  },
+  {
     name: 'Contenu principal',
     description: 'Les formats de base pour presenter votre contenu',
     types: [

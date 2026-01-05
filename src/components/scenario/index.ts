@@ -1,0 +1,6 @@
+export { ImmersivePlayer } from './ImmersivePlayer'
+export { AnimatedBackground } from './AnimatedBackground'
+export { AudioPlayer } from './AudioPlayer'
+export { VerticalNavigation } from './VerticalNavigation'
+export { SlideRenderer } from './slides'
+export * from './slides'

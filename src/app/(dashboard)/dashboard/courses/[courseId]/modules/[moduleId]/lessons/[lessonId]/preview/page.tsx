@@ -37,6 +37,9 @@ import {
   PDFViewer,
   MarkdownContent,
 } from '@/components/lessons/interactive-content'
+import { ImmersivePlayer } from '@/components/scenario'
+import type { Scenario } from '@/types/scenario'
+import { Play } from 'lucide-react'
 
 interface LessonMedia {
   id: string
@@ -76,6 +79,7 @@ const contentTypeConfig: Record<string, { icon: React.ElementType; label: string
   SORTING: { icon: ArrowUpDown, label: 'Classement', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' },
   FLASHCARDS: { icon: Layers, label: 'Flashcards', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300' },
   DOCUMENT: { icon: BookOpen, label: 'Document', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' },
+  INTERACTIVE_SCENARIO: { icon: Play, label: 'Scenario interactif', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' },
 }
 
 export default function LessonPreviewPage() {
@@ -87,6 +91,8 @@ export default function LessonPreviewPage() {
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
   const [score, setScore] = useState<number | null>(null)
+  const [showImmersivePlayer, setShowImmersivePlayer] = useState(false)
+  const [scenarioData, setScenarioData] = useState<Scenario | null>(null)
 
   useEffect(() => {
     async function fetchLesson() {
@@ -97,6 +103,15 @@ export default function LessonPreviewPage() {
         if (response.ok) {
           const data = await response.json()
           setLesson(data)
+          // Parse scenario data if INTERACTIVE_SCENARIO
+          if (data.contentType === 'INTERACTIVE_SCENARIO' && data.content) {
+            try {
+              const parsed = JSON.parse(data.content) as Scenario
+              setScenarioData(parsed)
+            } catch {
+              console.error('Failed to parse scenario data')
+            }
+          }
         } else {
           toast.error('Erreur lors du chargement')
         }
@@ -306,6 +321,40 @@ export default function LessonPreviewPage() {
             </div>
           )}
 
+          {/* INTERACTIVE_SCENARIO */}
+          {lesson.contentType === 'INTERACTIVE_SCENARIO' && scenarioData && (
+            <div className="space-y-4">
+              <div className="p-6 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                    <Play className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-emerald-900 dark:text-emerald-100">
+                      {scenarioData.title}
+                    </h3>
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300 mt-1">
+                      Formation interactive avec {scenarioData.slides.length} section(s)
+                    </p>
+                    {scenarioData.description && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {scenarioData.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700"
+                  size="lg"
+                  onClick={() => setShowImmersivePlayer(true)}
+                >
+                  <Play className="mr-2 h-5 w-5" />
+                  Lancer la formation
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* HOTSPOT - Coming soon */}
           {lesson.contentType === 'HOTSPOT' && (
             <div className="text-center py-12">
@@ -354,6 +403,20 @@ export default function LessonPreviewPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Immersive Player Modal */}
+      {showImmersivePlayer && scenarioData && (
+        <div className="fixed inset-0 z-50">
+          <ImmersivePlayer
+            scenario={scenarioData}
+            onExit={() => setShowImmersivePlayer(false)}
+            onComplete={() => {
+              setShowImmersivePlayer(false)
+              toast.success('Formation terminee !')
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

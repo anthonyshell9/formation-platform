@@ -26,6 +26,10 @@ import {
 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import Link from 'next/link'
+import type { Scenario } from '@/types/scenario'
+import { ScenarioEditor } from '@/components/scenario/editor'
+import { ImmersivePlayer } from '@/components/scenario'
+import { createEmptyScenario, DEFAULT_THEME, DEFAULT_SETTINGS } from '@/types/scenario'
 
 interface LessonMedia {
   id: string
@@ -114,6 +118,10 @@ export default function LessonEditorPage() {
   const [flashcards, setFlashcards] = useState<FlashCard[]>([])
   const [sortingItems, setSortingItems] = useState<SortingItem[]>([])
 
+  // Interactive scenario state
+  const [scenarioData, setScenarioData] = useState<Scenario | null>(null)
+  const [showScenarioPreview, setShowScenarioPreview] = useState(false)
+
   // File upload state
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -172,6 +180,9 @@ export default function LessonEditorPage() {
             case 'SORTING':
               setSortingItems(parsed.items || [])
               break
+            case 'INTERACTIVE_SCENARIO':
+              setScenarioData(parsed as Scenario)
+              break
             default:
               setTextContent(data.content)
           }
@@ -209,6 +220,9 @@ export default function LessonEditorPage() {
         break
       case 'SORTING':
         content = JSON.stringify({ items: sortingItems })
+        break
+      case 'INTERACTIVE_SCENARIO':
+        content = scenarioData ? JSON.stringify(scenarioData) : ''
         break
     }
 
@@ -909,8 +923,92 @@ export default function LessonEditorPage() {
               </div>
             </div>
           )}
+
+          {/* INTERACTIVE_SCENARIO */}
+          {lesson.contentType === 'INTERACTIVE_SCENARIO' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border">
+                <h3 className="font-semibold text-lg mb-2">Formation Interactive Immersive</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Créez une formation immersive avec des slides interactives, des animations,
+                  de la narration audio et des sous-titres synchronisés.
+                </p>
+                {scenarioData ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">Titre:</span>
+                      <span>{scenarioData.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">Slides:</span>
+                      <span>{scenarioData.slides.length} slide(s)</span>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        onClick={() => {
+                          // Open scenario editor in a modal or new page
+                          window.open(`/dashboard/scenario-editor?lessonId=${lessonId}&courseId=${courseId}&moduleId=${moduleId}`, '_blank')
+                        }}
+                      >
+                        Modifier le scénario
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowScenarioPreview(true)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        Aperçu
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      // Create empty scenario and open editor
+                      const newScenario: Scenario = {
+                        version: '1.0',
+                        title: title || 'Nouvelle formation',
+                        theme: DEFAULT_THEME,
+                        settings: DEFAULT_SETTINGS,
+                        slides: [
+                          {
+                            id: 'slide-1',
+                            type: 'title',
+                            order: 0,
+                            title: title || 'Nouvelle formation',
+                            subtitle: 'Cliquez pour commencer',
+                            background: {
+                              type: 'gradient',
+                              colors: ['#0A4D4A', '#00A693'],
+                              direction: 'to-bottom-right',
+                            },
+                          },
+                        ],
+                      }
+                      setScenarioData(newScenario)
+                      window.open(`/dashboard/scenario-editor?lessonId=${lessonId}&courseId=${courseId}&moduleId=${moduleId}`, '_blank')
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Créer un scénario interactif
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Scenario Preview Modal */}
+      {showScenarioPreview && scenarioData && (
+        <div className="fixed inset-0 z-50">
+          <ImmersivePlayer
+            scenario={scenarioData}
+            onExit={() => setShowScenarioPreview(false)}
+          />
+        </div>
+      )}
     </div>
   )
 }
