@@ -203,15 +203,29 @@ export function ScenarioEditor({
 
   // Export/Import
   const handleExport = useCallback(() => {
-    const blob = new Blob([JSON.stringify(scenario, null, 2)], {
-      type: 'application/json',
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${scenario.title.replace(/\s+/g, '-').toLowerCase()}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    try {
+      const dataStr = JSON.stringify(scenario, null, 2)
+      const blob = new Blob([dataStr], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${scenario.title.replace(/\s+/g, '-').toLowerCase() || 'scenario'}.json`
+      a.style.display = 'none'
+
+      // Append to body for better browser compatibility
+      document.body.appendChild(a)
+      a.click()
+
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }, 100)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Erreur lors de l\'export')
+    }
   }, [scenario])
 
   const handleImport = useCallback(() => {

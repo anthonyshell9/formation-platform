@@ -10,17 +10,13 @@ interface QuoteSlideProps {
 }
 
 export function QuoteSlide({ slide }: QuoteSlideProps) {
-  const [showQuote, setShowQuote] = useState(false)
-  const [showAuthor, setShowAuthor] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setShowQuote(true), 200)
-    const timer2 = setTimeout(() => setShowAuthor(true), 800)
-
-    return () => {
-      clearTimeout(timer1)
-      clearTimeout(timer2)
-    }
+    const timer = requestAnimationFrame(() => {
+      setMounted(true)
+    })
+    return () => cancelAnimationFrame(timer)
   }, [])
 
   return (
@@ -28,17 +24,22 @@ export function QuoteSlide({ slide }: QuoteSlideProps) {
       {/* Quote icon */}
       <Quote
         className={cn(
-          'w-12 h-12 text-white/30 mb-8 transition-all duration-500',
-          showQuote ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
+          'w-12 h-12 mb-8 transition-all duration-500',
+          mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
         )}
+        style={{ color: slide.accentColor || 'rgba(255,255,255,0.3)' }}
       />
 
       {/* Quote text */}
       <blockquote
         className={cn(
-          'text-2xl md:text-4xl font-light text-white leading-relaxed max-w-4xl transition-all duration-700',
-          showQuote ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          'text-2xl md:text-4xl font-light leading-relaxed max-w-4xl transition-all duration-500',
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         )}
+        style={{
+          color: slide.quoteColor || '#ffffff',
+          transitionDelay: '100ms',
+        }}
       >
         &ldquo;{slide.quote}&rdquo;
       </blockquote>
@@ -47,15 +48,19 @@ export function QuoteSlide({ slide }: QuoteSlideProps) {
       {(slide.author || slide.authorTitle) && (
         <div
           className={cn(
-            'mt-8 flex items-center gap-4 transition-all duration-700',
-            showAuthor ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            'mt-8 flex items-center gap-4 transition-all duration-500',
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           )}
+          style={{ transitionDelay: '300ms' }}
         >
           {slide.authorImage && (
             <img
               src={slide.authorImage}
               alt={slide.author || ''}
               className="w-16 h-16 rounded-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+              }}
             />
           )}
           <div className="text-left">

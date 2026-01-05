@@ -24,38 +24,36 @@ const getAnimationClass = (animation?: AnimationConfig) => {
 }
 
 export function TitleSlide({ slide }: TitleSlideProps) {
-  const [showTitle, setShowTitle] = useState(false)
-  const [showSubtitle, setShowSubtitle] = useState(false)
+  // Start visible immediately, then apply animation
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const titleDelay = slide.titleAnimation?.delay || 0
-    const subtitleDelay = slide.subtitleAnimation?.delay || 500
-
-    const titleTimer = setTimeout(() => setShowTitle(true), titleDelay)
-    const subtitleTimer = setTimeout(() => setShowSubtitle(true), subtitleDelay)
-
-    return () => {
-      clearTimeout(titleTimer)
-      clearTimeout(subtitleTimer)
-    }
-  }, [slide.titleAnimation?.delay, slide.subtitleAnimation?.delay])
+    // Small delay to allow initial render, then trigger animations
+    const timer = requestAnimationFrame(() => {
+      setMounted(true)
+    })
+    return () => cancelAnimationFrame(timer)
+  }, [])
 
   const titleStyle = slide.titleStyle || {}
+  const titleDelay = slide.titleAnimation?.delay || 0
+  const subtitleDelay = slide.subtitleAnimation?.delay || 200
 
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 text-center">
       {/* Main Title */}
       <h1
         className={cn(
-          'font-bold leading-tight transition-all duration-700',
-          showTitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8',
+          'font-bold leading-tight transition-all duration-500',
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
           getAnimationClass(slide.titleAnimation)
         )}
         style={{
-          fontSize: titleStyle.fontSize || '4rem',
+          fontSize: titleStyle.fontSize || 'clamp(2rem, 6vw, 4rem)',
           fontWeight: titleStyle.fontWeight || '700',
-          color: titleStyle.color || '#ffffff',
+          color: slide.titleColor || titleStyle.color || '#ffffff',
           textAlign: titleStyle.textAlign || 'center',
+          transitionDelay: `${titleDelay}ms`,
         }}
       >
         {slide.title}
@@ -65,18 +63,27 @@ export function TitleSlide({ slide }: TitleSlideProps) {
       {slide.subtitle && (
         <p
           className={cn(
-            'mt-6 text-xl md:text-2xl transition-all duration-700 delay-300',
-            showSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+            'mt-6 text-xl md:text-2xl transition-all duration-500',
+            mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
             getAnimationClass(slide.subtitleAnimation)
           )}
-          style={{ color: `${titleStyle.color || '#ffffff'}cc` }}
+          style={{
+            color: slide.subtitleColor || `${slide.titleColor || titleStyle.color || '#ffffff'}cc`,
+            transitionDelay: `${subtitleDelay}ms`,
+          }}
         >
           {slide.subtitle}
         </p>
       )}
 
       {/* Visual indicator to continue */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce">
+      <div
+        className={cn(
+          'absolute bottom-12 left-1/2 -translate-x-1/2 transition-opacity duration-500',
+          mounted ? 'opacity-100 animate-bounce' : 'opacity-0'
+        )}
+        style={{ transitionDelay: '500ms' }}
+      >
         <svg
           className="w-6 h-6 text-white/60"
           fill="none"

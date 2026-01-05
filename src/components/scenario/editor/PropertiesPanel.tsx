@@ -1002,7 +1002,10 @@ export function PropertiesPanel({
                   <Select
                     value={slide.interactiveType}
                     onValueChange={(value) =>
-                      updateSlide({ interactiveType: value as typeof slide.interactiveType })
+                      updateSlide({
+                        interactiveType: value as typeof slide.interactiveType,
+                        config: {}, // Reset config when type changes
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -1019,6 +1022,26 @@ export function PropertiesPanel({
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Quiz-specific config */}
+                {slide.interactiveType === 'quiz' && (
+                  <div>
+                    <Label>ID du Quiz</Label>
+                    <Input
+                      value={(slide.config as Record<string, unknown>)?.quizId as string || ''}
+                      onChange={(e) =>
+                        updateSlide({
+                          config: { ...slide.config, quizId: e.target.value },
+                        })
+                      }
+                      placeholder="ID du quiz existant..."
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Entrez l&apos;ID d&apos;un quiz existant pour l&apos;intégrer
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label>Afficher le score</Label>
                   <Switch
@@ -1047,30 +1070,121 @@ export function PropertiesPanel({
           <AccordionTrigger>Audio & Sous-titres</AccordionTrigger>
           <AccordionContent className="space-y-4 pt-2">
             <div>
-              <Label>URL Audio</Label>
+              <Label>URL Audio (MP3)</Label>
               <Input
                 value={slide.audio?.url || ''}
                 onChange={(e) =>
                   updateSlide({
-                    audio: e.target.value ? { url: e.target.value } : undefined,
+                    audio: e.target.value
+                      ? { ...slide.audio, url: e.target.value }
+                      : undefined,
                   })
                 }
-                placeholder="https://..."
+                placeholder="https://exemple.com/audio.mp3"
               />
             </div>
             {slide.audio?.url && (
-              <div className="flex items-center justify-between">
-                <Label>Lecture automatique</Label>
-                <Switch
-                  checked={slide.audio?.autoplay || false}
-                  onCheckedChange={(checked) =>
-                    updateSlide({
-                      audio: { ...slide.audio!, autoplay: checked },
-                    })
-                  }
-                />
-              </div>
+              <>
+                <div className="flex items-center justify-between">
+                  <Label>Lecture automatique</Label>
+                  <Switch
+                    checked={slide.audio?.autoplay || false}
+                    onCheckedChange={(checked) =>
+                      updateSlide({
+                        audio: { ...slide.audio!, autoplay: checked },
+                      })
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label>Boucle</Label>
+                  <Switch
+                    checked={slide.audio?.loop || false}
+                    onCheckedChange={(checked) =>
+                      updateSlide({
+                        audio: { ...slide.audio!, loop: checked },
+                      })
+                    }
+                  />
+                </div>
+              </>
             )}
+
+            <div className="pt-4 border-t">
+              <Label>Sous-titres</Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Ajoutez des sous-titres synchronisés avec l&apos;audio (format: début-fin en secondes)
+              </p>
+              <div className="space-y-2">
+                {(slide.subtitles || []).map((subtitle, i) => (
+                  <div key={i} className="flex gap-2 items-start">
+                    <div className="flex gap-1">
+                      <Input
+                        type="number"
+                        value={subtitle.start}
+                        onChange={(e) => {
+                          const newSubtitles = [...(slide.subtitles || [])]
+                          newSubtitles[i] = { ...subtitle, start: Number(e.target.value) }
+                          updateSlide({ subtitles: newSubtitles })
+                        }}
+                        placeholder="0"
+                        className="w-16 h-8 text-xs"
+                      />
+                      <Input
+                        type="number"
+                        value={subtitle.end}
+                        onChange={(e) => {
+                          const newSubtitles = [...(slide.subtitles || [])]
+                          newSubtitles[i] = { ...subtitle, end: Number(e.target.value) }
+                          updateSlide({ subtitles: newSubtitles })
+                        }}
+                        placeholder="5"
+                        className="w-16 h-8 text-xs"
+                      />
+                    </div>
+                    <Input
+                      value={subtitle.text}
+                      onChange={(e) => {
+                        const newSubtitles = [...(slide.subtitles || [])]
+                        newSubtitles[i] = { ...subtitle, text: e.target.value }
+                        updateSlide({ subtitles: newSubtitles })
+                      }}
+                      placeholder="Texte du sous-titre..."
+                      className="flex-1 h-8 text-xs"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        const newSubtitles = (slide.subtitles || []).filter((_, idx) => idx !== i)
+                        updateSlide({ subtitles: newSubtitles })
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const lastEnd = slide.subtitles?.length
+                      ? slide.subtitles[slide.subtitles.length - 1].end
+                      : 0
+                    updateSlide({
+                      subtitles: [
+                        ...(slide.subtitles || []),
+                        { start: lastEnd, end: lastEnd + 5, text: '' },
+                      ],
+                    })
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter un sous-titre
+                </Button>
+              </div>
+            </div>
           </AccordionContent>
         </AccordionItem>
 
