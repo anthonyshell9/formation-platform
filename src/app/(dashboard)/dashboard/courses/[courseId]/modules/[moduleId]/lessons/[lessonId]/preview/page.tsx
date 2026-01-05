@@ -373,7 +373,7 @@ export default function LessonPreviewPage() {
                 {lesson.media.map((media) => (
                   <a
                     key={media.id}
-                    href={media.url}
+                    href={media.url ?? undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent transition-colors"

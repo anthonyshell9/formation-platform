@@ -321,7 +321,7 @@ interface UploadZoneProps {
   config: { accept: string; container: string; icon: React.ReactNode }
   fileType: FileType
   acceptTypes: string
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   onDragOver: (e: React.DragEvent) => void
   onDragLeave: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void

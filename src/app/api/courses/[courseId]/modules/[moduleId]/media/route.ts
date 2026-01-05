@@ -50,7 +50,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const validationResult = moduleMediaSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Données invalides', details: validationResult.error.errors },
+        { error: 'Données invalides', details: validationResult.error.issues },
         { status: 400 }
       )
     }

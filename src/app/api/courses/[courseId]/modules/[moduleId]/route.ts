@@ -62,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const validationResult = moduleUpdateSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Données invalides', details: validationResult.error.errors },
+        { error: 'Données invalides', details: validationResult.error.issues },
         { status: 400 }
       )
     }
