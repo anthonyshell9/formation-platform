@@ -176,18 +176,42 @@ model Course {
 }
 
 model Module {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
   order       Int
   courseId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Direct content fields - allows content creation directly in module
+  contentType ContentType?
+  content     String?      @db.Text
+  videoUrl    String?
+  videoDuration Int?       // in seconds
+  requiresAck Boolean      @default(false) // For document acknowledgment
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
+  media    ModuleMedia[]
 
   @@map("modules")
+}
+
+model ModuleMedia {
+  id        String   @id @default(cuid())
+  moduleId  String
+  type      String   // image, video, pdf, attachment
+  url       String?  // For external URLs
+  blobName  String?  // For uploaded files (Azure Blob reference)
+  filename  String
+  size      Int?
+  mimeType  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@map("module_media")
 }
 
 model Lesson {
@@ -218,7 +242,8 @@ model LessonMedia {
   id        String   @id @default(cuid())
   lessonId  String
   type      String   // image, video, pdf, attachment
-  url       String
+  url       String?  // For external URLs
+  blobName  String?  // For uploaded files (Azure Blob reference)
   filename  String
   size      Int?
   mimeType  String?
