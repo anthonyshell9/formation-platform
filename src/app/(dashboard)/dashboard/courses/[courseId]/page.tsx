@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Role, CourseStatus } from '@prisma/client'
+import { EnrollButton } from '@/components/courses/EnrollButton'
 
 interface Props {
   params: Promise<{ courseId: string }>
@@ -211,61 +212,10 @@ export default async function CourseDetailPage({ params }: Props) {
             <div>
               <h3 className="font-semibold">Commencez cette formation</h3>
               <p className="text-sm text-muted-foreground">
-                Inscrivez-vous pour accéder au contenu
+                Inscrivez-vous pour acceder au contenu
               </p>
             </div>
-            <form
-              action={async () => {
-                'use server'
-                // Verify user exists in database, create if not (for OAuth users)
-                let dbUser = await prisma.user.findUnique({
-                  where: { id: session.user.id },
-                })
-
-                if (!dbUser && session.user.email) {
-                  // Try to find by email
-                  dbUser = await prisma.user.findUnique({
-                    where: { email: session.user.email },
-                  })
-
-                  if (!dbUser) {
-                    // Create user for OAuth login
-                    dbUser = await prisma.user.create({
-                      data: {
-                        id: session.user.id,
-                        email: session.user.email,
-                        name: session.user.name || null,
-                        image: session.user.image || null,
-                        isActive: true,
-                      },
-                    })
-                  }
-                }
-
-                if (!dbUser) {
-                  throw new Error('User not found')
-                }
-
-                await prisma.enrollment.create({
-                  data: {
-                    userId: dbUser.id,
-                    courseId,
-                  },
-                })
-                await prisma.courseProgress.create({
-                  data: {
-                    userId: dbUser.id,
-                    courseId,
-                    progressPercent: 0,
-                  },
-                })
-              }}
-            >
-              <Button type="submit">
-                <Play className="mr-2 h-4 w-4" />
-                Rejoindre
-              </Button>
-            </form>
+            <EnrollButton courseId={courseId} />
           </CardContent>
         </Card>
       )}
