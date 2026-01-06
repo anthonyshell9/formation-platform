@@ -31,7 +31,7 @@ import {
 import { BackgroundPicker } from './BackgroundPicker'
 import { ColorPicker, InlineColorPicker } from './ColorPicker'
 import { textColors, accentColors } from '@/lib/background-images'
-import { Plus, Trash2, Image, Type, Video, Sparkles, GripVertical, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Image, Type, Video, Sparkles, GripVertical, Loader2, ArrowUpDown } from 'lucide-react'
 import { QuizEditor } from '@/components/quiz/QuizEditor'
 import { toast } from 'sonner'
 
@@ -1050,12 +1050,168 @@ export function PropertiesPanel({
                   />
                 )}
 
+                {/* Drag-Drop config */}
+                {slide.interactiveType === 'drag-drop' && (
+                  <DragDropConfig
+                    config={(slide.config as Record<string, unknown>) || {}}
+                    onChange={(config) => updateSlide({ config })}
+                  />
+                )}
+
+                {/* Matching config */}
+                {slide.interactiveType === 'matching' && (
+                  <MatchingConfig
+                    config={(slide.config as Record<string, unknown>) || {}}
+                    onChange={(config) => updateSlide({ config })}
+                  />
+                )}
+
+                {/* Fill-Blank config */}
+                {slide.interactiveType === 'fill-blank' && (
+                  <FillBlankConfig
+                    config={(slide.config as Record<string, unknown>) || {}}
+                    onChange={(config) => updateSlide({ config })}
+                  />
+                )}
+
+                {/* Flashcards config */}
+                {slide.interactiveType === 'flashcards' && (
+                  <FlashcardsConfig
+                    config={(slide.config as Record<string, unknown>) || {}}
+                    onChange={(config) => updateSlide({ config })}
+                  />
+                )}
+
+                {/* Sorting config */}
+                {slide.interactiveType === 'sorting' && (
+                  <SortingConfig
+                    config={(slide.config as Record<string, unknown>) || {}}
+                    onChange={(config) => updateSlide({ config })}
+                  />
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label>Afficher le score</Label>
                   <Switch
                     checked={slide.showScore !== false}
                     onCheckedChange={(checked) => updateSlide({ showScore: checked })}
                   />
+                </div>
+              </>
+            )}
+
+            {/* Comparison slides */}
+            {slide.type === 'comparison' && (
+              <>
+                <div>
+                  <Label>Titre gauche</Label>
+                  <Input
+                    value={slide.leftTitle || ''}
+                    onChange={(e) => updateSlide({ leftTitle: e.target.value })}
+                    placeholder="Avant / Option A"
+                  />
+                </div>
+                <div>
+                  <Label>Titre droite</Label>
+                  <Input
+                    value={slide.rightTitle || ''}
+                    onChange={(e) => updateSlide({ rightTitle: e.target.value })}
+                    placeholder="Apres / Option B"
+                  />
+                </div>
+                <div>
+                  <Label>Type contenu gauche</Label>
+                  <Select
+                    value={slide.leftContent?.type || 'text'}
+                    onValueChange={(value) =>
+                      updateSlide({
+                        leftContent: {
+                          ...slide.leftContent,
+                          type: value as 'image' | 'text',
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Texte</SelectItem>
+                      <SelectItem value="image">Image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Contenu gauche</Label>
+                  {slide.leftContent?.type === 'image' ? (
+                    <Input
+                      value={slide.leftContent?.content || ''}
+                      onChange={(e) =>
+                        updateSlide({
+                          leftContent: { ...slide.leftContent, content: e.target.value },
+                        })
+                      }
+                      placeholder="URL de l'image"
+                    />
+                  ) : (
+                    <Textarea
+                      value={slide.leftContent?.content || ''}
+                      onChange={(e) =>
+                        updateSlide({
+                          leftContent: { ...slide.leftContent, content: e.target.value },
+                        })
+                      }
+                      placeholder="Texte..."
+                      rows={3}
+                    />
+                  )}
+                </div>
+                <div>
+                  <Label>Type contenu droite</Label>
+                  <Select
+                    value={slide.rightContent?.type || 'text'}
+                    onValueChange={(value) =>
+                      updateSlide({
+                        rightContent: {
+                          ...slide.rightContent,
+                          type: value as 'image' | 'text',
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">Texte</SelectItem>
+                      <SelectItem value="image">Image</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Contenu droite</Label>
+                  {slide.rightContent?.type === 'image' ? (
+                    <Input
+                      value={slide.rightContent?.content || ''}
+                      onChange={(e) =>
+                        updateSlide({
+                          rightContent: { ...slide.rightContent, content: e.target.value },
+                        })
+                      }
+                      placeholder="URL de l'image"
+                    />
+                  ) : (
+                    <Textarea
+                      value={slide.rightContent?.content || ''}
+                      onChange={(e) =>
+                        updateSlide({
+                          rightContent: { ...slide.rightContent, content: e.target.value },
+                        })
+                      }
+                      placeholder="Texte..."
+                      rows={3}
+                    />
+                  )}
                 </div>
               </>
             )}
@@ -1337,6 +1493,404 @@ function QuizSelector({ selectedQuizId, onSelect }: QuizSelectorProps) {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+// ============ INTERACTIVE EXERCISE CONFIGS ============
+
+// Drag & Drop Configuration
+interface DragDropConfigProps {
+  config: Record<string, unknown>
+  onChange: (config: Record<string, unknown>) => void
+}
+
+function DragDropConfig({ config, onChange }: DragDropConfigProps) {
+  const zones = (config.zones as Array<{ id: string; label: string }>) || []
+  const items = (config.items as Array<{ id: string; text: string; zone: string }>) || []
+
+  const addZone = () => {
+    const newZone = { id: generateId(), label: 'Nouvelle zone' }
+    onChange({ ...config, zones: [...zones, newZone] })
+  }
+
+  const updateZone = (index: number, label: string) => {
+    const newZones = [...zones]
+    newZones[index] = { ...newZones[index], label }
+    onChange({ ...config, zones: newZones })
+  }
+
+  const removeZone = (index: number) => {
+    const zoneId = zones[index].id
+    const newZones = zones.filter((_, i) => i !== index)
+    const newItems = items.filter(item => item.zone !== zoneId)
+    onChange({ ...config, zones: newZones, items: newItems })
+  }
+
+  const addItem = () => {
+    const newItem = { id: generateId(), text: 'Nouvel element', zone: zones[0]?.id || '' }
+    onChange({ ...config, items: [...items, newItem] })
+  }
+
+  const updateItem = (index: number, updates: Partial<{ text: string; zone: string }>) => {
+    const newItems = [...items]
+    newItems[index] = { ...newItems[index], ...updates }
+    onChange({ ...config, items: newItems })
+  }
+
+  const removeItem = (index: number) => {
+    onChange({ ...config, items: items.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Zones de depot</Label>
+        <div className="space-y-2 mt-2">
+          {zones.map((zone, i) => (
+            <div key={zone.id} className="flex gap-2">
+              <Input
+                value={zone.label}
+                onChange={(e) => updateZone(i, e.target.value)}
+                placeholder="Nom de la zone"
+                className="flex-1"
+              />
+              <Button variant="ghost" size="icon" onClick={() => removeZone(i)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+          <Button variant="outline" size="sm" onClick={addZone}>
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter une zone
+          </Button>
+        </div>
+      </div>
+
+      {zones.length > 0 && (
+        <div>
+          <Label className="text-sm font-medium">Elements a deposer</Label>
+          <div className="space-y-2 mt-2">
+            {items.map((item, i) => (
+              <div key={item.id} className="flex gap-2 items-center">
+                <Input
+                  value={item.text}
+                  onChange={(e) => updateItem(i, { text: e.target.value })}
+                  placeholder="Texte"
+                  className="flex-1"
+                />
+                <Select
+                  value={item.zone}
+                  onValueChange={(value) => updateItem(i, { zone: value })}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Zone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {zones.map((zone) => (
+                      <SelectItem key={zone.id} value={zone.id}>
+                        {zone.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="ghost" size="icon" onClick={() => removeItem(i)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={addItem}>
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter un element
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Matching Configuration
+interface MatchingConfigProps {
+  config: Record<string, unknown>
+  onChange: (config: Record<string, unknown>) => void
+}
+
+function MatchingConfig({ config, onChange }: MatchingConfigProps) {
+  const pairs = (config.pairs as Array<{ id: string; left: string; right: string }>) || []
+
+  const addPair = () => {
+    const newPair = { id: generateId(), left: 'Element gauche', right: 'Element droit' }
+    onChange({ ...config, pairs: [...pairs, newPair] })
+  }
+
+  const updatePair = (index: number, updates: Partial<{ left: string; right: string }>) => {
+    const newPairs = [...pairs]
+    newPairs[index] = { ...newPairs[index], ...updates }
+    onChange({ ...config, pairs: newPairs })
+  }
+
+  const removePair = (index: number) => {
+    onChange({ ...config, pairs: pairs.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Label className="text-sm font-medium">Paires a associer</Label>
+      <div className="space-y-2">
+        {pairs.map((pair, i) => (
+          <div key={pair.id} className="p-2 border rounded space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={pair.left}
+                onChange={(e) => updatePair(i, { left: e.target.value })}
+                placeholder="Element gauche"
+                className="flex-1"
+              />
+              <span className="self-center">↔</span>
+              <Input
+                value={pair.right}
+                onChange={(e) => updatePair(i, { right: e.target.value })}
+                placeholder="Element droit"
+                className="flex-1"
+              />
+              <Button variant="ghost" size="icon" onClick={() => removePair(i)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" size="sm" onClick={addPair}>
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une paire
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Fill-in-the-Blank Configuration
+interface FillBlankConfigProps {
+  config: Record<string, unknown>
+  onChange: (config: Record<string, unknown>) => void
+}
+
+function FillBlankConfig({ config, onChange }: FillBlankConfigProps) {
+  const text = (config.text as string) || ''
+  const answers = (config.answers as string[]) || []
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Texte a trous</Label>
+        <p className="text-xs text-muted-foreground mb-2">
+          Utilisez [___] pour marquer les trous
+        </p>
+        <Textarea
+          value={text}
+          onChange={(e) => onChange({ ...config, text: e.target.value })}
+          placeholder="La capitale de la France est [___]."
+          rows={4}
+        />
+      </div>
+
+      <div>
+        <Label className="text-sm font-medium">Reponses (dans l&apos;ordre)</Label>
+        <div className="space-y-2 mt-2">
+          {answers.map((answer, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="self-center text-sm text-muted-foreground w-6">{i + 1}.</span>
+              <Input
+                value={answer}
+                onChange={(e) => {
+                  const newAnswers = [...answers]
+                  newAnswers[i] = e.target.value
+                  onChange({ ...config, answers: newAnswers })
+                }}
+                placeholder="Reponse"
+                className="flex-1"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onChange({ ...config, answers: answers.filter((_, idx) => idx !== i) })
+                }}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onChange({ ...config, answers: [...answers, ''] })}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Ajouter une reponse
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Flashcards Configuration
+interface FlashcardsConfigProps {
+  config: Record<string, unknown>
+  onChange: (config: Record<string, unknown>) => void
+}
+
+function FlashcardsConfig({ config, onChange }: FlashcardsConfigProps) {
+  const cards = (config.cards as Array<{ id: string; front: string; back: string }>) || []
+
+  const addCard = () => {
+    const newCard = { id: generateId(), front: 'Question', back: 'Reponse' }
+    onChange({ ...config, cards: [...cards, newCard] })
+  }
+
+  const updateCard = (index: number, updates: Partial<{ front: string; back: string }>) => {
+    const newCards = [...cards]
+    newCards[index] = { ...newCards[index], ...updates }
+    onChange({ ...config, cards: newCards })
+  }
+
+  const removeCard = (index: number) => {
+    onChange({ ...config, cards: cards.filter((_, i) => i !== index) })
+  }
+
+  return (
+    <div className="space-y-4">
+      <Label className="text-sm font-medium">Cartes</Label>
+      <div className="space-y-2">
+        {cards.map((card, i) => (
+          <div key={card.id} className="p-3 border rounded space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Carte {i + 1}</span>
+              <Button variant="ghost" size="icon" onClick={() => removeCard(i)}>
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+            <div>
+              <Label className="text-xs">Recto (question)</Label>
+              <Textarea
+                value={card.front}
+                onChange={(e) => updateCard(i, { front: e.target.value })}
+                placeholder="Question ou terme"
+                rows={2}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Verso (reponse)</Label>
+              <Textarea
+                value={card.back}
+                onChange={(e) => updateCard(i, { back: e.target.value })}
+                placeholder="Reponse ou definition"
+                rows={2}
+              />
+            </div>
+          </div>
+        ))}
+        <Button variant="outline" size="sm" onClick={addCard}>
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une carte
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// Sorting Configuration
+interface SortingConfigProps {
+  config: Record<string, unknown>
+  onChange: (config: Record<string, unknown>) => void
+}
+
+function SortingConfig({ config, onChange }: SortingConfigProps) {
+  const items = (config.items as Array<{ id: string; text: string; correctOrder: number }>) || []
+
+  const addItem = () => {
+    const newItem = { id: generateId(), text: 'Nouvel element', correctOrder: items.length + 1 }
+    onChange({ ...config, items: [...items, newItem] })
+  }
+
+  const updateItem = (index: number, updates: Partial<{ text: string; correctOrder: number }>) => {
+    const newItems = [...items]
+    newItems[index] = { ...newItems[index], ...updates }
+    onChange({ ...config, items: newItems })
+  }
+
+  const removeItem = (index: number) => {
+    const newItems = items.filter((_, i) => i !== index)
+    // Recalculate correct orders
+    const reorderedItems = newItems.map((item, i) => ({
+      ...item,
+      correctOrder: i + 1,
+    }))
+    onChange({ ...config, items: reorderedItems })
+  }
+
+  const moveItem = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return
+    if (direction === 'down' && index === items.length - 1) return
+
+    const newItems = [...items]
+    const swapIndex = direction === 'up' ? index - 1 : index + 1
+    const temp = newItems[index].correctOrder
+    newItems[index].correctOrder = newItems[swapIndex].correctOrder
+    newItems[swapIndex].correctOrder = temp
+    ;[newItems[index], newItems[swapIndex]] = [newItems[swapIndex], newItems[index]]
+    onChange({ ...config, items: newItems })
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label className="text-sm font-medium">Elements a classer</Label>
+        <p className="text-xs text-muted-foreground mb-2">
+          L&apos;ordre ci-dessous est l&apos;ordre correct
+        </p>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <div key={item.id} className="flex gap-2 items-center">
+            <div className="flex flex-col">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={() => moveItem(i, 'up')}
+                disabled={i === 0}
+              >
+                <ArrowUpDown className="w-3 h-3 rotate-180" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={() => moveItem(i, 'down')}
+                disabled={i === items.length - 1}
+              >
+                <ArrowUpDown className="w-3 h-3" />
+              </Button>
+            </div>
+            <span className="text-sm text-muted-foreground w-6">{i + 1}.</span>
+            <Input
+              value={item.text}
+              onChange={(e) => updateItem(i, { text: e.target.value })}
+              placeholder="Element"
+              className="flex-1"
+            />
+            <Button variant="ghost" size="icon" onClick={() => removeItem(i)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+        <Button variant="outline" size="sm" onClick={addItem}>
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter un element
+        </Button>
+      </div>
     </div>
   )
 }

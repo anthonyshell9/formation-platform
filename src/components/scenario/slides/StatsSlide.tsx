@@ -76,11 +76,15 @@ function StatCard({
   animate,
   isVisible,
   delay,
+  valueColor,
+  labelColor,
 }: {
   stat: StatItem
   animate?: boolean
   isVisible: boolean
   delay: number
+  valueColor?: string
+  labelColor?: string
 }) {
   const [show, setShow] = useState(false)
 
@@ -100,14 +104,14 @@ function StatCard({
       {stat.icon && (
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
-          style={{ backgroundColor: `${stat.color || '#00A693'}20` }}
+          style={{ backgroundColor: `${valueColor || stat.color || '#00A693'}20` }}
         >
           <span className="text-3xl">{stat.icon}</span>
         </div>
       )}
       <p
         className="text-4xl md:text-5xl font-bold"
-        style={{ color: stat.color || '#ffffff' }}
+        style={{ color: valueColor || stat.color || '#00A693' }}
       >
         <AnimatedNumber
           value={stat.value}
@@ -116,14 +120,19 @@ function StatCard({
           suffix={stat.suffix}
         />
       </p>
-      <p className="text-lg text-white/70 mt-2 text-center">{stat.label}</p>
+      <p
+        className="text-lg mt-2 text-center"
+        style={{ color: labelColor || '#E5E5E5' }}
+      >
+        {stat.label}
+      </p>
     </div>
   )
 }
 
 export function StatsSlide({ slide }: StatsSlideProps) {
   const [isVisible, setIsVisible] = useState(false)
-  const { stats, layout = 'grid', animateCountUp = true } = slide
+  const { stats, layout = 'grid', animateCountUp = true, titleColor, valueColor, labelColor } = slide
 
   useEffect(() => {
     const timer = requestAnimationFrame(() => {
@@ -145,9 +154,10 @@ export function StatsSlide({ slide }: StatsSlideProps) {
       {slide.title && (
         <h2
           className={cn(
-            'text-3xl md:text-4xl font-bold text-white text-center mb-12 transition-all duration-700',
+            'text-3xl md:text-4xl font-bold text-center mb-12 transition-all duration-700',
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           )}
+          style={{ color: titleColor || '#FFFFFF' }}
         >
           {slide.title}
         </h2>
@@ -168,6 +178,8 @@ export function StatsSlide({ slide }: StatsSlideProps) {
               animate={animateCountUp}
               isVisible={isVisible}
               delay={index * 200}
+              valueColor={valueColor}
+              labelColor={labelColor}
             />
           ))}
         </div>
