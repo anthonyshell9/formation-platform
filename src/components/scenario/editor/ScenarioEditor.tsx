@@ -14,7 +14,9 @@ import {
   Undo,
   Redo,
   Eye,
+  ArrowLeft,
 } from 'lucide-react'
+import Link from 'next/link'
 import { SlideList } from './SlideList'
 import { AddSlideDialog } from './AddSlideDialog'
 import { PropertiesPanel } from './PropertiesPanel'
@@ -41,6 +43,8 @@ interface ScenarioEditorProps {
   initialScenario?: Scenario
   onSave?: (scenario: Scenario) => void
   onPreview?: (scenario: Scenario) => void
+  backUrl?: string
+  moduleTitle?: string
 }
 
 const createEmptyScenario = (title: string = 'Nouvelle formation'): Scenario => ({
@@ -68,6 +72,8 @@ export function ScenarioEditor({
   initialScenario,
   onSave,
   onPreview,
+  backUrl,
+  moduleTitle,
 }: ScenarioEditorProps) {
   const [scenario, setScenario] = useState<Scenario>(
     initialScenario || createEmptyScenario()
@@ -258,6 +264,22 @@ export function ScenarioEditor({
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
         <div className="flex items-center gap-2">
+          {backUrl && (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href={backUrl}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Retour
+                </Link>
+              </Button>
+              {moduleTitle && (
+                <span className="text-sm text-muted-foreground">
+                  {moduleTitle}
+                </span>
+              )}
+              <div className="w-px h-6 bg-border mx-2" />
+            </>
+          )}
           <Button
             variant="ghost"
             size="icon"

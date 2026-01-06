@@ -188,29 +188,13 @@ function ScenarioEditorContent() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Back Button Header */}
-      <div className="flex items-center gap-4 px-4 py-2 border-b bg-background">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={backUrl}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Retour
-          </Link>
-        </Button>
-        {moduleTitle && (
-          <span className="text-sm text-muted-foreground">
-            Module: {moduleTitle}
-          </span>
-        )}
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <ScenarioEditor
-          initialScenario={scenario}
-          onSave={handleSave}
-          onPreview={handlePreview}
-        />
-      </div>
-    </div>
+    <ScenarioEditor
+      initialScenario={scenario}
+      onSave={handleSave}
+      onPreview={handlePreview}
+      backUrl={backUrl}
+      moduleTitle={moduleTitle}
+    />
   )
 }
 
