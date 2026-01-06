@@ -473,7 +473,7 @@ export default function ModuleEditPage() {
                         </p>
                       </div>
                       <Button variant="outline" asChild>
-                        <Link href={`/dashboard/scenarios/editor?moduleId=${moduleId}&courseId=${courseId}`}>
+                        <Link href={`/dashboard/scenario-editor?moduleId=${moduleId}&courseId=${courseId}`}>
                           <Play className="mr-2 h-4 w-4" />
                           Ouvrir l&apos;editeur de scenarios
                         </Link>
