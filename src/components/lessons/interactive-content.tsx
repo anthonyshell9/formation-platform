@@ -839,3 +839,6 @@ export function MarkdownContent({ content }: MarkdownContentProps) {
     />
   )
 }
+
+// Re-export QuizExercise from separate file
+export { QuizExercise } from './interactive-content/QuizExercise'

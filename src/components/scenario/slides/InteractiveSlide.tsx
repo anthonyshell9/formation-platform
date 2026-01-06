@@ -9,6 +9,7 @@ import {
   FillBlankExercise,
   FlashcardsExercise,
   SortingExercise,
+  QuizExercise,
 } from '@/components/lessons/interactive-content'
 import { AlertCircle, Puzzle, ArrowRightLeft, TextCursor, Layers, ArrowUpDown, HelpCircle, MousePointer } from 'lucide-react'
 
@@ -142,17 +143,14 @@ export function InteractiveSlide({ slide, onComplete }: InteractiveSlideProps) {
       case 'quiz':
         const quizId = config.quizId as string
         if (!quizId) {
-          return renderPlaceholder('Sélectionnez un quiz à intégrer')
+          return renderPlaceholder('Selectionnez un quiz a integrer')
         }
         return (
-          <div className="text-center text-white space-y-4">
-            <HelpCircle className="w-16 h-16 mx-auto text-purple-400" />
-            <p className="text-xl font-semibold">Quiz intégré</p>
-            <p className="text-white/60">ID: {quizId}</p>
-            <p className="text-sm text-white/50">
-              Le quiz sera chargé depuis la base de données
-            </p>
-          </div>
+          <QuizExercise
+            quizId={quizId}
+            onComplete={handleComplete}
+            darkMode={true}
+          />
         )
 
       case 'hotspot':
