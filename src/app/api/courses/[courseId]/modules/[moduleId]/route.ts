@@ -30,6 +30,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         media: {
           orderBy: { order: 'asc' },
         },
+        quiz: {
+          include: {
+            questions: {
+              orderBy: { order: 'asc' },
+              include: {
+                options: {
+                  orderBy: { order: 'asc' },
+                },
+              },
+            },
+          },
+        },
       },
     })
 

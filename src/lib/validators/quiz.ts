@@ -25,6 +25,7 @@ export const quizSchema = z.object({
   shuffleQuestions: z.boolean().default(false),
   showCorrectAnswers: z.boolean().default(true),
   maxAttempts: z.number().int().min(1).optional().nullable(),
+  moduleId: z.string().cuid().optional().nullable(),
   questions: z.array(questionSchema).optional(),
 })
 

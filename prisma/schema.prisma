@@ -193,6 +193,7 @@ model Module {
   course   Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons  Lesson[]
   media    ModuleMedia[]
+  quiz     Quiz?
 
   @@map("modules")
 }
@@ -275,10 +276,12 @@ model Quiz {
   showCorrectAnswers Boolean @default(true)
   maxAttempts     Int?
   creatorId       String
+  moduleId        String?  @unique // For direct module association
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   creator   User          @relation("QuizCreator", fields: [creatorId], references: [id])
+  module    Module?       @relation(fields: [moduleId], references: [id], onDelete: SetNull)
   questions Question[]
   attempts  QuizAttempt[]
   lesson    Lesson?

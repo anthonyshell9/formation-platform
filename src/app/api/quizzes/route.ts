@@ -79,12 +79,26 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { questions, ...quizData } = quizSchema.parse(body)
+    const { questions, moduleId, ...quizData } = quizSchema.parse(body)
+
+    // If moduleId is provided, check if module already has a quiz
+    if (moduleId) {
+      const existingQuiz = await prisma.quiz.findFirst({
+        where: { moduleId },
+      })
+      if (existingQuiz) {
+        return NextResponse.json(
+          { error: 'Ce module a deja un quiz. Modifiez-le au lieu d\'en creer un nouveau.' },
+          { status: 400 }
+        )
+      }
+    }
 
     const quiz = await prisma.quiz.create({
       data: {
         ...quizData,
         creatorId: session.user.id,
+        moduleId: moduleId || null,
         questions: questions
           ? {
               create: questions.map((q, index) => ({

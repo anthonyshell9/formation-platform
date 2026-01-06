@@ -41,6 +41,32 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { FileUpload } from '@/components/ui/file-upload'
+import { QuizEditor, QuizFormInput } from '@/components/quiz/QuizEditor'
+
+interface Quiz {
+  id: string
+  title: string
+  description?: string
+  timeLimit?: number
+  passingScore: number
+  shuffleQuestions: boolean
+  showCorrectAnswers: boolean
+  maxAttempts?: number
+  questions: {
+    id: string
+    type: string
+    question: string
+    explanation?: string
+    points: number
+    order: number
+    options: {
+      id: string
+      text: string
+      isCorrect: boolean
+      order: number
+    }[]
+  }[]
+}
 
 interface Lesson {
   id: string
@@ -76,6 +102,7 @@ interface Module {
   requiresAck?: boolean
   lessons: Lesson[]
   media?: ModuleMedia[]
+  quiz?: Quiz
 }
 
 const contentTypeCategories = [
@@ -507,8 +534,42 @@ export default function ModuleEditPage() {
                     </div>
                   )}
 
+                  {/* Quiz Editor */}
+                  {contentType === 'QUIZ' && (
+                    <QuizEditor
+                      moduleId={moduleId}
+                      initialData={module?.quiz ? {
+                        id: module.quiz.id,
+                        title: module.quiz.title,
+                        description: module.quiz.description,
+                        timeLimit: module.quiz.timeLimit,
+                        passingScore: module.quiz.passingScore,
+                        shuffleQuestions: module.quiz.shuffleQuestions,
+                        showCorrectAnswers: module.quiz.showCorrectAnswers,
+                        maxAttempts: module.quiz.maxAttempts,
+                        questions: module.quiz.questions.map(q => ({
+                          id: q.id,
+                          type: q.type as 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'SHORT_ANSWER',
+                          question: q.question,
+                          explanation: q.explanation,
+                          points: q.points,
+                          options: q.options.map(o => ({
+                            id: o.id,
+                            text: o.text,
+                            isCorrect: o.isCorrect,
+                          })),
+                        })),
+                      } : undefined}
+                      onQuizCreated={(quizId) => {
+                        toast.success('Quiz cree et lie au module')
+                        loadModule()
+                      }}
+                      compact={true}
+                    />
+                  )}
+
                   {/* Interactive exercises placeholder */}
-                  {['FLASHCARDS', 'MATCHING', 'DRAG_DROP', 'FILL_BLANK', 'SORTING', 'QUIZ'].includes(contentType) && (
+                  {['FLASHCARDS', 'MATCHING', 'DRAG_DROP', 'FILL_BLANK', 'SORTING'].includes(contentType) && (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>La configuration de ce type d&apos;exercice sera bientot disponible.</p>
                       <p className="text-sm mt-2">

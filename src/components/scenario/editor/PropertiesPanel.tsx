@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Slide, ScenarioTheme, ScenarioElement } from '@/types/scenario'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,10 +21,25 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { BackgroundPicker } from './BackgroundPicker'
 import { ColorPicker, InlineColorPicker } from './ColorPicker'
 import { textColors, accentColors } from '@/lib/background-images'
-import { Plus, Trash2, Image, Type, Video, Sparkles, GripVertical } from 'lucide-react'
+import { Plus, Trash2, Image, Type, Video, Sparkles, GripVertical, Loader2 } from 'lucide-react'
+import { QuizEditor } from '@/components/quiz/QuizEditor'
+import { toast } from 'sonner'
+
+interface QuizSummary {
+  id: string
+  title: string
+  _count: { questions: number }
+}
 
 interface PropertiesPanelProps {
   slide: Slide | null
@@ -1025,21 +1040,14 @@ export function PropertiesPanel({
 
                 {/* Quiz-specific config */}
                 {slide.interactiveType === 'quiz' && (
-                  <div>
-                    <Label>ID du Quiz</Label>
-                    <Input
-                      value={(slide.config as Record<string, unknown>)?.quizId as string || ''}
-                      onChange={(e) =>
-                        updateSlide({
-                          config: { ...slide.config, quizId: e.target.value },
-                        })
-                      }
-                      placeholder="ID du quiz existant..."
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Entrez l&apos;ID d&apos;un quiz existant pour l&apos;intégrer
-                    </p>
-                  </div>
+                  <QuizSelector
+                    selectedQuizId={(slide.config as Record<string, unknown>)?.quizId as string || ''}
+                    onSelect={(quizId) =>
+                      updateSlide({
+                        config: { ...slide.config, quizId },
+                      })
+                    }
+                  />
                 )}
 
                 <div className="flex items-center justify-between">
@@ -1237,6 +1245,98 @@ export function PropertiesPanel({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+    </div>
+  )
+}
+
+// Quiz Selector Component with create option
+interface QuizSelectorProps {
+  selectedQuizId: string
+  onSelect: (quizId: string) => void
+}
+
+function QuizSelector({ selectedQuizId, onSelect }: QuizSelectorProps) {
+  const [quizzes, setQuizzes] = useState<QuizSummary[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  useEffect(() => {
+    fetchQuizzes()
+  }, [])
+
+  async function fetchQuizzes() {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/quizzes?limit=100')
+      if (response.ok) {
+        const data = await response.json()
+        setQuizzes(data.quizzes || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch quizzes:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Label>Quiz</Label>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Chargement...
+        </div>
+      ) : (
+        <>
+          <Select
+            value={selectedQuizId || 'none'}
+            onValueChange={(value) => onSelect(value === 'none' ? '' : value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selectionner un quiz..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Aucun quiz</SelectItem>
+              {quizzes.map((quiz) => (
+                <SelectItem key={quiz.id} value={quiz.id}>
+                  {quiz.title} ({quiz._count.questions} questions)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Creer un nouveau quiz
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Creer un quiz</DialogTitle>
+              </DialogHeader>
+              <QuizEditor
+                compact={true}
+                onQuizCreated={(quizId) => {
+                  onSelect(quizId)
+                  setIsCreateOpen(false)
+                  fetchQuizzes()
+                  toast.success('Quiz cree et selectionne')
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {selectedQuizId && (
+            <p className="text-xs text-muted-foreground">
+              ID: {selectedQuizId}
+            </p>
+          )}
+        </>
+      )}
     </div>
   )
 }
