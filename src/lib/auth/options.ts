@@ -94,12 +94,41 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ account }) {
+    async signIn({ account, profile }) {
       // For credentials provider, user is already validated
       if (account?.provider === 'credentials') {
         return true
       }
-      // For Azure AD, check if user exists or create
+
+      // For Azure AD, only allow pre-existing users
+      if (account?.provider === 'azure-ad') {
+        const email = profile?.email?.toLowerCase().trim()
+
+        if (!email) {
+          console.log('[AUTH] Azure AD login rejected: No email in profile')
+          return '/auth/signin?error=NoEmail'
+        }
+
+        // Check if user exists in database
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
+          select: { id: true, isActive: true },
+        })
+
+        if (!existingUser) {
+          console.log('[AUTH] Azure AD login rejected: User not registered:', email)
+          return '/auth/signin?error=UserNotRegistered'
+        }
+
+        if (!existingUser.isActive) {
+          console.log('[AUTH] Azure AD login rejected: User inactive:', email)
+          return '/auth/signin?error=AccountDisabled'
+        }
+
+        console.log('[AUTH] Azure AD login allowed for registered user:', email)
+        return true
+      }
+
       return true
     },
     async jwt({ token, user, account }) {

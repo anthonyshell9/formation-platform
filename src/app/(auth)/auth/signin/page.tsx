@@ -31,6 +31,11 @@ function SignInContent() {
     'Mot de passe incorrect': 'Mot de passe incorrect',
     'Code MFA invalide': 'Code MFA invalide',
     'Veuillez utiliser la connexion Microsoft': 'Ce compte utilise la connexion Microsoft',
+    // SSO restriction errors
+    'UserNotRegistered': 'Votre compte n\'est pas enregistre. Contactez l\'administrateur.',
+    'AccountDisabled': 'Votre compte a ete desactive. Contactez l\'administrateur.',
+    'NoEmail': 'Impossible de recuperer l\'email depuis Microsoft. Contactez l\'administrateur.',
+    'AccessDenied': 'Acces refuse. Seuls les utilisateurs pre-enregistres peuvent se connecter.',
   }
 
   async function handleCredentialsLogin(e: React.FormEvent) {
