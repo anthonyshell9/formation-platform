@@ -6,23 +6,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import {
   ArrowLeft,
   Loader2,
-  Plus,
-  Trash2,
-  GripVertical,
   Save,
   Video,
   FileText,
@@ -35,13 +24,11 @@ import {
   Link as LinkIcon,
   File,
   Play,
-  Edit,
   Settings,
-  BookOpen,
 } from 'lucide-react'
 import Link from 'next/link'
 import { FileUpload } from '@/components/ui/file-upload'
-import { QuizEditor, QuizFormInput } from '@/components/quiz/QuizEditor'
+import { QuizEditor } from '@/components/quiz/QuizEditor'
 
 interface Quiz {
   id: string
@@ -68,27 +55,6 @@ interface Quiz {
   }[]
 }
 
-interface Lesson {
-  id: string
-  title: string
-  description?: string
-  contentType: string
-  content?: string
-  videoUrl?: string
-  order: number
-}
-
-interface ModuleMedia {
-  id: string
-  type: string
-  url?: string
-  blobName?: string
-  filename: string
-  size?: number
-  mimeType?: string
-  order: number
-}
-
 interface Module {
   id: string
   title: string
@@ -100,8 +66,6 @@ interface Module {
   videoUrl?: string
   videoDuration?: number
   requiresAck?: boolean
-  lessons: Lesson[]
-  media?: ModuleMedia[]
   quiz?: Quiz
 }
 
@@ -143,7 +107,6 @@ const contentTypeCategories = [
   },
 ]
 
-// Flat list for backwards compatibility
 const contentTypes = contentTypeCategories.flatMap(cat => cat.types)
 
 export default function ModuleEditPage() {
@@ -161,10 +124,6 @@ export default function ModuleEditPage() {
   const [content, setContent] = useState('')
   const [videoUrl, setVideoUrl] = useState('')
   const [requiresAck, setRequiresAck] = useState(false)
-  const [isAddingLesson, setIsAddingLesson] = useState(false)
-  const [newLessonType, setNewLessonType] = useState('')
-  const [newLessonTitle, setNewLessonTitle] = useState('')
-  const [activeTab, setActiveTab] = useState('content')
 
   useEffect(() => {
     loadModule()
@@ -205,82 +164,35 @@ export default function ModuleEditPage() {
           requiresAck,
         }),
       })
-      if (!response.ok) throw new Error('Erreur')
-      toast.success('Module enregistre')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Erreur de sauvegarde')
+      }
+      const updatedModule = await response.json()
+      setModule(updatedModule)
+      toast.success('Module enregistre avec succes')
     } catch (error) {
-      toast.error('Erreur lors de la sauvegarde')
+      toast.error(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde')
       console.error(error)
     } finally {
       setIsSaving(false)
     }
   }
 
-  async function addLesson() {
-    if (!newLessonTitle || !newLessonType) {
-      toast.error('Veuillez remplir tous les champs')
-      return
-    }
-
-    try {
-      const response = await fetch(`/api/courses/${courseId}/modules/${moduleId}/lessons`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newLessonTitle,
-          contentType: newLessonType,
-          order: module?.lessons.length || 0,
-        }),
-      })
-
-      if (!response.ok) throw new Error('Erreur')
-
-      const newLesson = await response.json()
-      setModule(prev => prev ? {
-        ...prev,
-        lessons: [...prev.lessons, newLesson]
-      } : null)
-
-      setNewLessonTitle('')
-      setNewLessonType('')
-      setIsAddingLesson(false)
-      toast.success('Lecon ajoutee')
-
-      // Redirect to lesson editor
-      router.push(`/dashboard/courses/${courseId}/modules/${moduleId}/lessons/${newLesson.id}`)
-    } catch (error) {
-      toast.error('Erreur lors de l\'ajout')
-      console.error(error)
+  function handleFileUpload(value: string | null) {
+    if (!value) return
+    if (contentType === 'VIDEO') {
+      setVideoUrl(value)
+    } else if (contentType === 'PDF' || contentType === 'DOCUMENT') {
+      setContent(value)
     }
   }
 
-  async function deleteLesson(lessonId: string) {
-    if (!confirm('Supprimer cette lecon ?')) return
-
-    try {
-      const response = await fetch(
-        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
-        { method: 'DELETE' }
-      )
-      if (!response.ok) throw new Error('Erreur')
-
-      setModule(prev => prev ? {
-        ...prev,
-        lessons: prev.lessons.filter(l => l.id !== lessonId)
-      } : null)
-      toast.success('Lecon supprimee')
-    } catch (error) {
-      toast.error('Erreur lors de la suppression')
-      console.error(error)
-    }
-  }
-
-  const handleFileUpload = (url: string | null) => {
-    setVideoUrl(url || '')
-  }
+  const selectedTypeInfo = contentTypes.find(t => t.value === contentType)
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
@@ -297,8 +209,6 @@ export default function ModuleEditPage() {
     )
   }
 
-  const selectedTypeInfo = contentTypes.find(t => t.value === contentType)
-
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
@@ -311,9 +221,7 @@ export default function ModuleEditPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Editer le module</h1>
-            <p className="text-muted-foreground text-sm">
-              Creez du contenu directement ou ajoutez des lecons
-            </p>
+            <p className="text-muted-foreground">Configurez le contenu de ce module</p>
           </div>
         </div>
         <Button onClick={saveModule} disabled={isSaving}>
@@ -326,428 +234,292 @@ export default function ModuleEditPage() {
         </Button>
       </div>
 
-      {/* Module Info */}
+      {/* Basic Info */}
       <Card>
         <CardHeader>
-          <CardTitle>Informations du module</CardTitle>
+          <CardTitle>Informations</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Titre du module</Label>
+            <Label htmlFor="title">Titre du module</Label>
             <Input
+              id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Introduction aux concepts de base"
+              placeholder="Ex: Introduction a la cybersecurite"
+              className="mt-1.5"
             />
           </div>
           <div>
-            <Label>Description (optionnel)</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
+              id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Decrivez le contenu de ce module..."
-              className="min-h-[80px]"
+              className="mt-1.5"
+              rows={3}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="content" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Contenu du module
-          </TabsTrigger>
-          <TabsTrigger value="lessons" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Lecons ({module.lessons.length})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Direct Module Content Tab */}
-        <TabsContent value="content" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contenu direct</CardTitle>
-              <CardDescription>
-                Creez du contenu directement dans ce module sans passer par des lecons separees
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Content Type Selection */}
-              <div className="space-y-4">
-                <Label>Type de contenu</Label>
-                {contentTypeCategories.map((category) => (
-                  <div key={category.name} className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-sm">{category.name}</h4>
-                      <p className="text-xs text-muted-foreground">{category.description}</p>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {category.types.map((type) => {
-                        const Icon = type.icon
-                        const isSelected = contentType === type.value
-                        return (
-                          <button
-                            key={type.value}
-                            type="button"
-                            onClick={() => setContentType(isSelected ? null : type.value)}
-                            className={`p-3 rounded-xl border-2 transition-all text-left group ${
-                              isSelected
-                                ? 'border-primary bg-primary/5 shadow-md'
-                                : 'border-muted hover:border-muted-foreground/50 hover:shadow-sm'
-                            }`}
-                          >
-                            <div className="flex items-start gap-2">
-                              <div className={`p-2 rounded-lg ${type.color} shrink-0`}>
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0">
-                                <p className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
-                                  {type.label}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Content Editor based on selected type */}
-              {contentType && (
-                <div className="space-y-4 pt-4 border-t">
-                  <div className="flex items-center gap-2 mb-4">
-                    {selectedTypeInfo && (
-                      <>
-                        <div className={`p-2 rounded-lg ${selectedTypeInfo.color}`}>
-                          <selectedTypeInfo.icon className="h-4 w-4" />
-                        </div>
-                        <span className="font-medium">{selectedTypeInfo.label}</span>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Video Content */}
-                  {contentType === 'VIDEO' && (
-                    <div className="space-y-4">
-                      <FileUpload
-                        value={videoUrl}
-                        onChange={handleFileUpload}
-                        fileType="video"
-                        label="Video"
-                        placeholder="Televersez une video ou entrez une URL (YouTube, Vimeo, MP4)"
-                        showUrlOption={true}
-                      />
-                    </div>
-                  )}
-
-                  {/* PDF Content */}
-                  {contentType === 'PDF' && (
-                    <div className="space-y-4">
-                      <FileUpload
-                        value={videoUrl}
-                        onChange={handleFileUpload}
-                        fileType="document"
-                        label="Document PDF"
-                        placeholder="Televersez un document PDF"
-                        showUrlOption={true}
-                      />
-                    </div>
-                  )}
-
-                  {/* Text Content */}
-                  {contentType === 'TEXT' && (
-                    <div>
-                      <Label>Contenu (Markdown supporte)</Label>
-                      <Textarea
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Redigez votre contenu ici... Utilisez le format Markdown pour la mise en forme."
-                        className="min-h-[300px] font-mono"
-                      />
-                    </div>
-                  )}
-
-                  {/* External Link */}
-                  {contentType === 'EXTERNAL_LINK' && (
-                    <div>
-                      <Label>URL du lien externe</Label>
-                      <Input
-                        value={videoUrl}
-                        onChange={(e) => setVideoUrl(e.target.value)}
-                        placeholder="https://..."
-                      />
-                    </div>
-                  )}
-
-                  {/* Interactive Scenario */}
-                  {contentType === 'INTERACTIVE_SCENARIO' && (
-                    <div className="space-y-4">
-                      <div>
-                        <Label>Configuration du scenario (JSON)</Label>
-                        <Textarea
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
-                          placeholder='{"version": "1.0", "title": "...", "slides": [...]}'
-                          className="min-h-[300px] font-mono"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Utilisez l&apos;editeur de scenarios pour creer facilement votre contenu immersif
-                        </p>
-                      </div>
-                      <Button variant="outline" asChild>
-                        <Link href={`/dashboard/scenario-editor?moduleId=${moduleId}&courseId=${courseId}`}>
-                          <Play className="mr-2 h-4 w-4" />
-                          Ouvrir l&apos;editeur de scenarios
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Document Acknowledgment */}
-                  {contentType === 'DOCUMENT' && (
-                    <div className="space-y-4">
-                      <FileUpload
-                        value={videoUrl}
-                        onChange={handleFileUpload}
-                        fileType="document"
-                        label="Document"
-                        placeholder="Televersez un document"
-                        showUrlOption={true}
-                      />
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Accusé de réception requis</Label>
-                          <p className="text-xs text-muted-foreground">
-                            L&apos;apprenant doit confirmer avoir lu le document
-                          </p>
-                        </div>
-                        <Switch
-                          checked={requiresAck}
-                          onCheckedChange={setRequiresAck}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quiz Editor */}
-                  {contentType === 'QUIZ' && (
-                    <QuizEditor
-                      moduleId={moduleId}
-                      initialData={module?.quiz ? {
-                        id: module.quiz.id,
-                        title: module.quiz.title,
-                        description: module.quiz.description,
-                        timeLimit: module.quiz.timeLimit,
-                        passingScore: module.quiz.passingScore,
-                        shuffleQuestions: module.quiz.shuffleQuestions,
-                        showCorrectAnswers: module.quiz.showCorrectAnswers,
-                        maxAttempts: module.quiz.maxAttempts,
-                        questions: module.quiz.questions.map(q => ({
-                          id: q.id,
-                          type: q.type as 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'SHORT_ANSWER',
-                          question: q.question,
-                          explanation: q.explanation,
-                          points: q.points,
-                          options: q.options.map(o => ({
-                            id: o.id,
-                            text: o.text,
-                            isCorrect: o.isCorrect,
-                          })),
-                        })),
-                      } : undefined}
-                      onQuizCreated={(quizId) => {
-                        toast.success('Quiz cree et lie au module')
-                        loadModule()
-                      }}
-                      compact={true}
-                    />
-                  )}
-
-                  {/* Interactive exercises placeholder */}
-                  {['FLASHCARDS', 'MATCHING', 'DRAG_DROP', 'FILL_BLANK', 'SORTING'].includes(contentType) && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>La configuration de ce type d&apos;exercice sera bientot disponible.</p>
-                      <p className="text-sm mt-2">
-                        En attendant, utilisez une lecon pour creer ce contenu.
-                      </p>
-                    </div>
-                  )}
+      {/* Content */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Contenu du module</CardTitle>
+          <CardDescription>
+            Selectionnez le type de contenu et configurez-le
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Content Type Selection */}
+          <div className="space-y-4">
+            <Label>Type de contenu</Label>
+            {contentTypeCategories.map((category) => (
+              <div key={category.name} className="space-y-3">
+                <div>
+                  <h4 className="font-medium text-sm">{category.name}</h4>
+                  <p className="text-xs text-muted-foreground">{category.description}</p>
                 </div>
-              )}
-
-              {!contentType && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Selectionnez un type de contenu pour commencer</p>
-                  <p className="text-sm">ou utilisez l&apos;onglet Lecons pour du contenu structure</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Lessons Tab */}
-        <TabsContent value="lessons">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Lecons</CardTitle>
-                <CardDescription>
-                  Organisez votre contenu en plusieurs lecons
-                </CardDescription>
-              </div>
-              <Dialog open={isAddingLesson} onOpenChange={setIsAddingLesson}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Ajouter une lecon
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Nouvelle lecon</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-6">
-                    <div>
-                      <Label>Titre de la lecon</Label>
-                      <Input
-                        value={newLessonTitle}
-                        onChange={(e) => setNewLessonTitle(e.target.value)}
-                        placeholder="Ex: Les fondamentaux de la securite"
-                        className="mt-1.5"
-                      />
-                    </div>
-
-                    <div className="space-y-6">
-                      <Label>Type de contenu</Label>
-                      {contentTypeCategories.map((category) => (
-                        <div key={category.name} className="space-y-3">
-                          <div>
-                            <h4 className="font-medium text-sm">{category.name}</h4>
-                            <p className="text-xs text-muted-foreground">{category.description}</p>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {category.types.map((type) => {
-                              const Icon = type.icon
-                              const isSelected = newLessonType === type.value
-                              return (
-                                <button
-                                  key={type.value}
-                                  type="button"
-                                  onClick={() => setNewLessonType(type.value)}
-                                  className={`p-4 rounded-xl border-2 transition-all text-left group ${
-                                    isSelected
-                                      ? 'border-primary bg-primary/5 shadow-md'
-                                      : 'border-muted hover:border-muted-foreground/50 hover:shadow-sm'
-                                  }`}
-                                >
-                                  <div className="flex items-start gap-3">
-                                    <div className={`p-2.5 rounded-lg ${type.color} shrink-0`}>
-                                      <Icon className="h-5 w-5" />
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
-                                        {type.label}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                                        {type.description}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                      <Button variant="outline" onClick={() => setIsAddingLesson(false)}>
-                        Annuler
-                      </Button>
-                      <Button onClick={addLesson} disabled={!newLessonTitle || !newLessonType}>
-                        Creer la lecon
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </CardHeader>
-            <CardContent>
-              {module.lessons.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Aucune lecon dans ce module</p>
-                  <p className="text-sm">
-                    Utilisez l&apos;onglet &quot;Contenu du module&quot; pour creer du contenu directement,
-                    <br />ou cliquez sur &quot;Ajouter une lecon&quot; pour un contenu structure
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {module.lessons
-                    .sort((a, b) => a.order - b.order)
-                    .map((lesson) => {
-                      const typeInfo = contentTypes.find(t => t.value === lesson.contentType)
-                      const Icon = typeInfo?.icon || FileText
-
-                      return (
-                        <div
-                          key={lesson.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                        >
-                          <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                          <div className={`p-2 rounded-lg ${typeInfo?.color || 'bg-gray-100'}`}>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {category.types.map((type) => {
+                    const Icon = type.icon
+                    const isSelected = contentType === type.value
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => setContentType(isSelected ? null : type.value)}
+                        className={`p-3 rounded-xl border-2 transition-all text-left group ${
+                          isSelected
+                            ? 'border-primary bg-primary/5 shadow-md'
+                            : 'border-muted hover:border-muted-foreground/50 hover:shadow-sm'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`p-2 rounded-lg ${type.color} shrink-0`}>
                             <Icon className="h-4 w-4" />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{lesson.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {typeInfo?.label || lesson.contentType}
+                          <div className="min-w-0">
+                            <p className={`font-medium text-sm ${isSelected ? 'text-primary' : ''}`}>
+                              {type.label}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                            >
-                              <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}`}>
-                                <Edit className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              asChild
-                            >
-                              <Link href={`/dashboard/courses/${courseId}/modules/${moduleId}/lessons/${lesson.id}/preview`}>
-                                <Play className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteLesson(lesson.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
                         </div>
-                      )
-                    })}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Content Editor based on selected type */}
+          {contentType && (
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center gap-2 mb-4">
+                {selectedTypeInfo && (
+                  <>
+                    <div className={`p-2 rounded-lg ${selectedTypeInfo.color}`}>
+                      <selectedTypeInfo.icon className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium">{selectedTypeInfo.label}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Video Content */}
+              {contentType === 'VIDEO' && (
+                <div className="space-y-4">
+                  <FileUpload
+                    value={videoUrl}
+                    onChange={handleFileUpload}
+                    fileType="video"
+                    label="Video"
+                    placeholder="Televersez une video ou entrez une URL (YouTube, Vimeo, MP4)"
+                    showUrlOption={true}
+                  />
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+              {/* PDF Content */}
+              {contentType === 'PDF' && (
+                <div className="space-y-4">
+                  <FileUpload
+                    value={content}
+                    onChange={handleFileUpload}
+                    fileType="document"
+                    label="Document PDF"
+                    placeholder="Televersez un fichier PDF"
+                    accept=".pdf"
+                    showUrlOption={true}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Accuse de reception requis</Label>
+                      <p className="text-xs text-muted-foreground">
+                        L&apos;apprenant doit confirmer avoir lu le document
+                      </p>
+                    </div>
+                    <Switch
+                      checked={requiresAck}
+                      onCheckedChange={setRequiresAck}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Document with acknowledgment */}
+              {contentType === 'DOCUMENT' && (
+                <div className="space-y-4">
+                  <FileUpload
+                    value={content}
+                    onChange={handleFileUpload}
+                    fileType="document"
+                    label="Document"
+                    placeholder="Televersez un document"
+                    showUrlOption={true}
+                  />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Accuse de reception requis</Label>
+                      <p className="text-xs text-muted-foreground">
+                        L&apos;apprenant doit confirmer avoir lu le document
+                      </p>
+                    </div>
+                    <Switch
+                      checked={requiresAck}
+                      onCheckedChange={setRequiresAck}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Text Content (Markdown) */}
+              {contentType === 'TEXT' && (
+                <div className="space-y-2">
+                  <Label>Contenu (Markdown supporte)</Label>
+                  <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="Redigez votre contenu ici...
+
+# Titre
+## Sous-titre
+
+- Point 1
+- Point 2
+
+**Texte en gras** et *texte en italique*"
+                    rows={15}
+                    className="font-mono text-sm"
+                  />
+                </div>
+              )}
+
+              {/* External Link */}
+              {contentType === 'EXTERNAL_LINK' && (
+                <div className="space-y-2">
+                  <Label>URL externe</Label>
+                  <Input
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="https://exemple.com/ressource"
+                    type="url"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    L&apos;apprenant sera redirige vers ce lien
+                  </p>
+                </div>
+              )}
+
+              {/* Interactive Scenario */}
+              {contentType === 'INTERACTIVE_SCENARIO' && (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+                    <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                      Creez une experience de formation immersive avec slides, animations, narration audio et sous-titres.
+                    </p>
+                  </div>
+                  <Link href={`/dashboard/scenario-editor?moduleId=${moduleId}&courseId=${courseId}`}>
+                    <Button className="w-full" size="lg">
+                      <Play className="mr-2 h-5 w-5" />
+                      Ouvrir l&apos;editeur de scenarios
+                    </Button>
+                  </Link>
+                  {content && (
+                    <div className="text-sm text-muted-foreground">
+                      Scenario existant detecte. Cliquez pour le modifier.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Quiz Editor */}
+              {contentType === 'QUIZ' && (
+                <QuizEditor
+                  moduleId={moduleId}
+                  initialData={module?.quiz ? {
+                    id: module.quiz.id,
+                    title: module.quiz.title,
+                    description: module.quiz.description,
+                    timeLimit: module.quiz.timeLimit,
+                    passingScore: module.quiz.passingScore,
+                    shuffleQuestions: module.quiz.shuffleQuestions,
+                    showCorrectAnswers: module.quiz.showCorrectAnswers,
+                    maxAttempts: module.quiz.maxAttempts,
+                    questions: module.quiz.questions.map(q => ({
+                      id: q.id,
+                      type: q.type as 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'SHORT_ANSWER',
+                      question: q.question,
+                      explanation: q.explanation,
+                      points: q.points,
+                      options: q.options.map(o => ({
+                        id: o.id,
+                        text: o.text,
+                        isCorrect: o.isCorrect,
+                      })),
+                    })),
+                  } : undefined}
+                  onQuizCreated={() => {
+                    toast.success('Quiz cree et lie au module')
+                    loadModule()
+                  }}
+                  compact={true}
+                />
+              )}
+
+              {/* Interactive exercises placeholder */}
+              {['FLASHCARDS', 'MATCHING', 'DRAG_DROP', 'FILL_BLANK', 'SORTING'].includes(contentType) && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>La configuration de ce type d&apos;exercice sera bientot disponible.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!contentType && (
+            <div className="text-center py-8 text-muted-foreground">
+              <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Selectionnez un type de contenu pour commencer</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Save Button at bottom */}
+      <div className="flex justify-end pb-8">
+        <Button onClick={saveModule} disabled={isSaving} size="lg">
+          {isSaving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          Enregistrer les modifications
+        </Button>
+      </div>
     </div>
   )
 }

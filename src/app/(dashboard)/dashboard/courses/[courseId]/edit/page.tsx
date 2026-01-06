@@ -42,17 +42,7 @@ interface ModuleInput {
   title: string
   description?: string
   order: number
-  lessons: LessonInput[]
-}
-
-interface LessonInput {
-  id?: string
-  title: string
-  description?: string
-  contentType: 'VIDEO' | 'TEXT' | 'PDF' | 'QUIZ' | 'EXTERNAL_LINK'
-  content?: string
-  videoUrl?: string
-  order: number
+  contentType?: string
 }
 
 interface CourseFormInput {
@@ -238,7 +228,7 @@ export default function EditCoursePage() {
       if (!response.ok) throw new Error('Erreur')
 
       const newModule = await response.json()
-      setModules([...modules, { ...newModule, lessons: [] }])
+      setModules([...modules, newModule])
       toast.success('Module ajouté')
     } catch (error) {
       toast.error('Erreur lors de l\'ajout du module')
@@ -540,9 +530,11 @@ export default function EditCoursePage() {
                         className="font-medium"
                       />
                     </div>
-                    <span className="text-sm text-muted-foreground">
-                      {module.lessons?.length || 0} leçons
-                    </span>
+                    {module.contentType && (
+                      <Badge variant="outline" className="text-xs">
+                        {module.contentType}
+                      </Badge>
+                    )}
                     {module.id && (
                       <>
                         <Button variant="outline" size="sm" asChild>
@@ -765,12 +757,12 @@ export default function EditCoursePage() {
               </div>
               <div className="flex items-center gap-2 pt-6">
                 <Switch
-                  id="cert-all-lessons"
+                  id="cert-all-modules"
                   checked={certRequireAllLessons}
                   onCheckedChange={setCertRequireAllLessons}
                 />
-                <Label htmlFor="cert-all-lessons">
-                  Toutes les leçons doivent être complétées
+                <Label htmlFor="cert-all-modules">
+                  Tous les modules doivent être complétés
                 </Label>
               </div>
             </div>

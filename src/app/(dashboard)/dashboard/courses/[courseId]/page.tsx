@@ -45,14 +45,6 @@ export default async function CourseDetailPage({ params }: Props) {
       creator: { select: { id: true, name: true, image: true } },
       modules: {
         orderBy: { order: 'asc' },
-        include: {
-          lessons: {
-            orderBy: { order: 'asc' },
-            include: {
-              quiz: { select: { id: true, title: true } },
-            },
-          },
-        },
       },
       _count: { select: { enrollments: true } },
     },
@@ -83,13 +75,11 @@ export default async function CourseDetailPage({ params }: Props) {
         courseId,
       },
     },
-    include: {
-      lessons: true,
-    },
   })
 
-  const totalLessons = course.modules.reduce((acc, m) => acc + m.lessons.length, 0)
-  const completedLessons = progress?.lessons.filter(l => l.completed).length || 0
+  const totalModules = course.modules.length
+  // Progress tracking will be implemented when migrating to module-based progress
+  const completedModules = 0
 
   const contentTypeIcon: Record<string, typeof Video> = {
     VIDEO: Video,
@@ -103,6 +93,7 @@ export default async function CourseDetailPage({ params }: Props) {
     HOTSPOT: MousePointer,
     SORTING: ArrowUpDown,
     FLASHCARDS: Layers,
+    INTERACTIVE_SCENARIO: Play,
   }
 
   return (
@@ -141,22 +132,13 @@ export default async function CourseDetailPage({ params }: Props) {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="flex items-center gap-4 p-4">
             <BookOpen className="h-8 w-8 text-primary" />
             <div>
               <p className="text-2xl font-bold">{course.modules.length}</p>
               <p className="text-sm text-muted-foreground">Modules</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center gap-4 p-4">
-            <FileText className="h-8 w-8 text-primary" />
-            <div>
-              <p className="text-2xl font-bold">{totalLessons}</p>
-              <p className="text-sm text-muted-foreground">Leçons</p>
             </div>
           </CardContent>
         </Card>
@@ -188,7 +170,7 @@ export default async function CourseDetailPage({ params }: Props) {
               <div>
                 <h3 className="font-semibold">Votre progression</h3>
                 <p className="text-sm text-muted-foreground">
-                  {completedLessons} / {totalLessons} leçons terminées
+                  {completedModules} / {totalModules} modules terminés
                 </p>
               </div>
               <span className="text-2xl font-bold">
@@ -196,9 +178,9 @@ export default async function CourseDetailPage({ params }: Props) {
               </span>
             </div>
             <Progress value={progress?.progressPercent || 0} className="h-3" />
-            {course.modules.length > 0 && course.modules[0].lessons.length > 0 && (
+            {course.modules.length > 0 && (
               <Button asChild className="mt-4 w-full">
-                <Link href={`/dashboard/courses/${courseId}/lessons/${course.modules[0].lessons[0].id}`}>
+                <Link href={`/dashboard/courses/${courseId}/modules/${course.modules[0].id}/view`}>
                   <Play className="mr-2 h-4 w-4" />
                   {(progress?.progressPercent || 0) > 0 ? 'Continuer la formation' : 'Commencer la formation'}
                 </Link>
@@ -220,7 +202,7 @@ export default async function CourseDetailPage({ params }: Props) {
         </Card>
       )}
 
-      {/* Modules & Lessons */}
+      {/* Modules */}
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Contenu de la formation</h2>
         {course.modules.length === 0 ? (
@@ -229,77 +211,62 @@ export default async function CourseDetailPage({ params }: Props) {
             <p className="text-muted-foreground">Aucun module pour le moment</p>
           </Card>
         ) : (
-          course.modules.map((module, moduleIndex) => (
-            <Card key={module.id}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+          <div className="space-y-2">
+            {course.modules.map((module, moduleIndex) => {
+              const Icon = module.contentType ? contentTypeIcon[module.contentType] || FileText : FileText
+              // Progress tracking to be implemented
+              const isCompleted = false
+              const isLocked = !enrollment
+
+              return (
+                <Link
+                  key={module.id}
+                  href={
+                    isLocked
+                      ? '#'
+                      : `/dashboard/courses/${courseId}/modules/${module.id}/view`
+                  }
+                  className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
+                    isLocked
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-accent'
+                  }`}
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm text-primary-foreground font-medium">
                     {moduleIndex + 1}
                   </span>
-                  {module.title}
-                </CardTitle>
-                {module.description && (
-                  <p className="text-sm text-muted-foreground">{module.description}</p>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  {module.lessons.map((lesson) => {
-                    const Icon = contentTypeIcon[lesson.contentType]
-                    const lessonProgress = progress?.lessons.find(
-                      l => l.lessonId === lesson.id
-                    )
-                    const isCompleted = lessonProgress?.completed
-                    const isLocked = !enrollment
-
-                    return (
-                      <Link
-                        key={lesson.id}
-                        href={
-                          isLocked
-                            ? '#'
-                            : `/dashboard/courses/${courseId}/lessons/${lesson.id}`
-                        }
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-                          isLocked
-                            ? 'opacity-50 cursor-not-allowed'
-                            : 'hover:bg-accent'
-                        }`}
-                      >
-                        <div
-                          className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                            isCompleted
-                              ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
-                              : 'bg-accent'
-                          }`}
-                        >
-                          {isLocked ? (
-                            <Lock className="h-4 w-4" />
-                          ) : isCompleted ? (
-                            <CheckCircle2 className="h-4 w-4" />
-                          ) : (
-                            <Icon className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium">{lesson.title}</p>
-                          {lesson.videoDuration && (
-                            <p className="text-xs text-muted-foreground">
-                              {Math.floor(lesson.videoDuration / 60)}:
-                              {String(lesson.videoDuration % 60).padStart(2, '0')}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          {lesson.contentType}
-                        </Badge>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+                      isCompleted
+                        ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
+                        : 'bg-accent'
+                    }`}
+                  >
+                    {isLocked ? (
+                      <Lock className="h-5 w-5" />
+                    ) : isCompleted ? (
+                      <CheckCircle2 className="h-5 w-5" />
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{module.title}</p>
+                    {module.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {module.description}
+                      </p>
+                    )}
+                  </div>
+                  {module.contentType && (
+                    <Badge variant="outline" className="text-xs">
+                      {module.contentType}
+                    </Badge>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>
